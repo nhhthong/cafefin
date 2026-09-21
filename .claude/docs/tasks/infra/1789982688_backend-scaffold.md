@@ -1,8 +1,8 @@
 # Backend Scaffold
 Date: 2026-09-21
 Updated: 2026-09-21
-Commit: not committed
-Plan tasks: 0.1, 0.2, 0.3, 0.4, 0.5
+Commit: not committed, 88fae6c
+Plan tasks: 0.1, 0.2, 0.3, 0.4, 0.5, 0.6
 
 ## Summary
 Stood up the Maven multi-module skeleton, a booting `cafefin-api` Spring Boot app, a local
@@ -24,6 +24,14 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
   volume init
 - `.gitignore` — `.env`, `target/`, `node_modules/`, IDE files (note: `.env` line is currently
   commented out by user choice, see Follow-up)
+- `cafefin-api/pom.xml` — added `spring-boot-testcontainers`, `org.testcontainers:testcontainers-postgresql`,
+  `org.testcontainers:testcontainers-junit-jupiter` (test scope); bound `spring-boot-maven-plugin`'s
+  `repackage` goal to the `package` phase explicitly (2026-09-21)
+- `cafefin-api/src/test/java/com/cafefin/api/CafefinApiApplicationTests.java` — new, context-load
+  smoke test on a Testcontainers Postgres (2026-09-21)
+- `cafefin-api/src/test/resources/application.yml` — new, test-only config; leaves datasource/flyway
+  URLs unset so `@ServiceConnection` wires them from the container, no `MIGRATION_DB_PASSWORD` /
+  `RUNTIME_DB_PASSWORD` env vars needed for tests (2026-09-21)
 
 ## Decisions
 - Java 25 over 21, PostgreSQL 17 over 16 (both spec-allowed): took the newer of each pair, no
@@ -38,6 +46,21 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
 - Used `org.springframework.boot:spring-boot-starter-flyway`, not bare `flyway-core`. Spring Boot
   4.x moved Flyway's Spring wiring into that separate starter module; `flyway-core` alone compiles
   and boots with zero errors but Flyway silently never runs.
+- (2026-09-21) Testcontainers 2.x renamed its module artifacts with a `testcontainers-` prefix
+  (`testcontainers-postgresql`, `testcontainers-junit-jupiter`) — the bare `postgresql`/
+  `junit-jupiter` artifact ids from Testcontainers 1.x no longer resolve. Version itself comes from
+  Spring Boot 4.1.1's own BOM (`testcontainers.version=2.0.5`), not pinned separately.
+- (2026-09-21) Test-only `application.yml` deliberately omits `spring.datasource.*` /
+  `spring.flyway.*` url/user/password (the main config sets these explicitly for the prod
+  migration/runtime role split) — leaving them unset lets `@ServiceConnection`'s
+  `JdbcConnectionDetails` bean supply them for both JPA and Flyway against the test container. If
+  they were left in test config, Flyway would try to connect to `localhost:5432` using
+  `MIGRATION_DB_PASSWORD`, which doesn't exist in the test environment.
+- (2026-09-21) `spring-boot-maven-plugin` needs its `repackage` goal explicitly bound to the
+  `package` phase — without `spring-boot-starter-parent` as parent, Maven does not bind it
+  automatically. Missing this produced a plain jar; `java -jar` failed with `no main manifest
+  attribute` (found while building the Docker runtime image, task 0.9 — see
+  `.claude/docs/tasks/frontend/`).
 
 ## Side Effects
 - `db/init/01-users.sh` only runs on a Postgres container's first volume creation. A grant
@@ -59,6 +82,8 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
 - 2026-09-21 — app start creates `flyway_schema_history` and applies `V1__init.sql`;
   `select version from flyway_schema_history order by installed_rank desc limit 1` returns `1`
   (task 0.5).
+- 2026-09-21 — `mvn -pl cafefin-api test`: Testcontainers boots `postgres:17.11`, Flyway applies
+  `V1__init.sql` against it, Spring context loads; `BUILD SUCCESS`, 1 test passed (task 0.6).
 
 ## Related
 - ADR: `.claude/docs/decisions/1789982869_flyway-separate-connection.md`
@@ -75,8 +100,10 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
 - `.env` is staged for commit with real local dev passwords inside it, and `.gitignore`'s `.env`
   line is commented out by explicit user choice (asked directly, user chose to keep it that way).
   Flagging again since it is now actually staged, not just a hypothetical.
-- Remaining infra plan tasks: 0.6 (Testcontainers integration test scaffold), 0.7–0.8 (frontend
-  Node/Vite/React/TS scaffold + Vitest), 0.9 (same-origin `docker compose up --build`).
+- Task 0.6 (Testcontainers) done 2026-09-21. Frontend scaffold + same-origin serving (plan tasks
+  0.7–0.9) split into a separate `frontend` feature doc — different domain, different req row (0.8
+  vs 0.1–0.5): see `.claude/docs/tasks/frontend/1789985162_frontend-scaffold.md`.
 
 ## Change Log
 - 2026-09-21 — initial
+- 2026-09-21 — task 0.6 (Testcontainers scaffold) + `repackage` goal fix (commit 88fae6c)

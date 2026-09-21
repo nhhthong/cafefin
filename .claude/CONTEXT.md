@@ -31,6 +31,15 @@ applies to everything in this file too.
   makes Flyway's own bootstrap fail with "permission denied for schema public" even though
   `migration` already has "ALL PRIVILEGES ON DATABASE". Needs a separate `GRANT ALL ON SCHEMA
   public TO migration` — both grants live in `db/init/01-users.sh`.
+- **Landmine**: Testcontainers 2.x renamed its module artifacts with a `testcontainers-` prefix
+  (`org.testcontainers:testcontainers-postgresql`, `testcontainers-junit-jupiter`) — the bare
+  `postgresql`/`junit-jupiter` artifact ids from Testcontainers 1.x no longer resolve
+  (`'dependencies.dependency.version' ... is missing`, since the BOM only manages the new names).
+- **Landmine**: without `spring-boot-starter-parent` as parent (this repo's own root `pom.xml` is
+  the parent instead), `spring-boot-maven-plugin`'s `repackage` goal is not bound to the `package`
+  phase automatically — `mvn package` silently produces a plain, non-executable jar, and `java -jar`
+  fails with `no main manifest attribute`. Fix: an explicit `<executions>` block binding `repackage`
+  to the plugin declaration (`cafefin-api/pom.xml`).
 
 ## Core Entities
 
