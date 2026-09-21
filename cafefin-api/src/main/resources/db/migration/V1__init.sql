@@ -1,0 +1,13 @@
+-- Baseline migration (Task 0.5). Deliberately empty: its only job is to
+-- prove Flyway is wired up correctly end to end (connects as "migration",
+-- runs on startup, records itself in flyway_schema_history) before any
+-- real domain table exists. The first domain tables (users, accounts,
+-- ledger_entries, ...) arrive as V2, V3, ... once Layer 1 (auth/ledger) is
+-- actually planned and implemented — guessing their columns here would be
+-- getting ahead of the spec.
+--
+-- Migration files are immutable once applied: Flyway checksums this file
+-- and refuses to start the app if it's edited after being recorded in
+-- flyway_schema_history. A later change always means a NEW file
+-- (V2__..., V3__...), never editing this one.
+SELECT 1;

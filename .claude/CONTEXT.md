@@ -5,24 +5,48 @@ applies to everything in this file too.
 
 ## Dev Environment
 
-(empty — no repo scaffold yet; `/clio:plan infra` fills this once the stack is set up)
+- OS: Ubuntu 26.04.1 LTS (Resolute), kernel 7.0.0-31-generic, x86_64.
+- Maven: `~/tools/apache-maven-3.9.16` (apt only has 3.9.12), on `PATH` via `~/.bashrc` — export
+  manually if a fresh shell hasn't sourced it (`mvn: command not found`).
+- **Landmine**: `java -version` working doesn't prove a JDK is installed — this machine had only
+  `openjdk-25-jre` (no `javac`), so `mvn compile` failed with the misleading `release version 25
+  not supported`. Fixed via `sudo apt install openjdk-25-jdk`. Check `which javac`, not just
+  `java -version`.
+- Postgres: `docker compose --env-file env.example up -d postgres` — no real `.env` file exists
+  (this repo's permission settings block all `.env*` paths); the committed template is
+  `env.example` (no leading dot, no `.txt`). Dual `migration`/`runtime` DB users are seeded by
+  `db/init/01-users.sh`, only on first volume creation (`.claude/docs/plans/infra.md` task 0.4).
+- `cafefin-api` needs `RUNTIME_DB_PASSWORD` (and `MIGRATION_DB_PASSWORD` for Flyway) exported
+  before `spring-boot:run` — DB creds come from env only, never hard-coded.
+- `mvn spring-boot:run` fails ("No plugin found for prefix 'spring-boot'") without a registered
+  plugin group — use the full coordinate: `mvn -pl cafefin-api
+  org.springframework.boot:spring-boot-maven-plugin:4.1.1:run`.
+- **Landmine**: Spring Boot 4.x moved Flyway's Spring wiring into its own module
+  (`spring-boot-flyway`, separate from `spring-boot-autoconfigure`). Depending on bare
+  `flyway-core` boots clean with zero errors but Flyway silently never runs. Fix: depend on
+  `spring-boot-starter-flyway` (+ `flyway-database-postgresql`). Suspect this same "starter vs.
+  bare library" split for any other Boot 4.x integration that boots clean but visibly does nothing.
+- **Landmine**: `GRANT ALL PRIVILEGES ON DATABASE x TO role` does not include `CREATE` on the
+  `public` schema (PostgreSQL 15+ no longer grants that by default to non-owners). Missing it
+  makes Flyway's own bootstrap fail with "permission denied for schema public" even though
+  `migration` already has "ALL PRIVILEGES ON DATABASE". Needs a separate `GRANT ALL ON SCHEMA
+  public TO migration` — both grants live in `db/init/01-users.sh`.
 
 ## Core Entities
 
-- `Account` (`id`, `userId`, `currency`, `accountType` [USER/SYSTEM]) — **no `balance` column**;
-  balance is always derived from `LedgerEntry`. `NAPAS_CLEARING` and `NAPAS_SETTLEMENT` are seeded
-  SYSTEM accounts; normal users can never select or write to a SYSTEM account directly.
-- `LedgerEntry` (`id`, `accountId`, `transactionId`, `type` [DEBIT/CREDIT], `amount`,
-  `entrySequence`, `balanceAfter`) — immutable, append-only. `entrySequence` is the only valid
-  "latest entry" ordering (not `id`, not timestamp).
-- `NapasTransaction` (`id`, `direction`, `status` [PENDING/COMPLETED/FAILED/IN_DOUBT], `amount`,
-  `accountId`, `napasRefId`) — tracks the external gateway leg of an outbound/inbound payment,
-  separate from the internal `Transaction`/`LedgerEntry` pair that represents it in the ledger.
-- `IdempotencyKey` (`userId`, `key`, `requestFingerprint`, `state` [IN_FLIGHT/COMPLETED],
-  `responseBody`, `responseStatus`) — scoped per user, guards duplicate transfer submission.
-- KYC profile — verification status (`PENDING`/`IN_REVIEW`/`VERIFIED`/`REJECTED`/`EXPIRED`/
-  `REQUIRES_UPDATE`), separate from AML alerts/cases which are compliance records layered around
-  ledger events and never mutate ledger history.
+- `Account` (`id userId currency accountType[USER/SYSTEM]`) — **no `balance` column**, always
+  derived from `LedgerEntry`. `NAPAS_CLEARING`/`NAPAS_SETTLEMENT` are seeded SYSTEM accounts; users
+  never select/write one directly.
+- `LedgerEntry` (`id accountId transactionId type[DEBIT/CREDIT] amount entrySequence
+  balanceAfter`) — immutable, append-only. `entrySequence` (not `id`, not timestamp) is the only
+  valid "latest entry" ordering.
+- `NapasTransaction` (`id direction status[PENDING/COMPLETED/FAILED/IN_DOUBT] amount accountId
+  napasRefId`) — the external gateway leg, separate from the internal `Transaction`/`LedgerEntry`
+  pair it corresponds to.
+- `IdempotencyKey` (`userId key requestFingerprint state[IN_FLIGHT/COMPLETED] responseBody
+  responseStatus`) — scoped per user, guards duplicate transfer submission.
+- KYC profile — status `PENDING/IN_REVIEW/VERIFIED/REJECTED/EXPIRED/REQUIRES_UPDATE`, separate
+  from AML alerts/cases (compliance records layered around ledger events, never mutating it).
 
 ## Terms that mean two different things
 

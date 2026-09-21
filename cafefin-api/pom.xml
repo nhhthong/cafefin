@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  cafefin-api: the main Spring Boot application. This is the module you
+  actually run — it exposes the REST API under /api/v1/** and, once the
+  frontend is built, serves the React SPA's static files from the same
+  origin (see CafefinApiApplication.java for the entry point).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.cafefin</groupId>
+    <artifactId>cafefin</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>cafefin-api</artifactId>
+  <packaging>jar</packaging>
+
+  <name>cafefin-api</name>
+  <description>Primary Spring Boot app, serves the REST API and the built React SPA</description>
+
+  <dependencies>
+    <!-- "Starter" jars are Spring Boot's bundles: one dependency pulls in
+         everything needed for that feature plus sane default configuration. -->
+
+    <!-- Embedded Tomcat + Spring MVC, for writing @RestController endpoints. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Spring Data JPA (Hibernate underneath): maps Java classes to
+         database tables and gives us repository interfaces instead of
+         hand-written SQL for basic CRUD. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <!-- Bean Validation (@NotNull, @Positive, etc.) for validating incoming
+         request DTOs before they reach business logic. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- Actuator exposes operational endpoints like /actuator/health,
+         used both for local sanity checks and container health checks. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- JDBC driver for PostgreSQL. "runtime" scope: needed to actually
+         connect at run time, but not to compile our code (we never
+         reference org.postgresql.* classes directly). -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Flyway: runs the versioned SQL files under
+         src/main/resources/db/migration on every app startup, tracking
+         which ones already ran in the flyway_schema_history table. This is
+         how the schema evolves — never by hand-editing the database, and
+         never by letting Hibernate auto-generate DDL (see application.yml,
+         ddl-auto: none).
+
+         Spring Boot 4.x split Flyway's Spring integration (the
+         auto-configuration that actually wires Flyway into app startup)
+         out of spring-boot-autoconfigure into its own module,
+         spring-boot-flyway — the same pattern used for JPA
+         (spring-boot-data-jpa/spring-boot-jpa/spring-boot-hibernate).
+         Depending on flyway-core alone pulls in the Flyway library but NOT
+         that Spring wiring, so the app boots with no error and Flyway
+         simply never runs. spring-boot-starter-flyway is what actually
+         brings both in together. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-flyway</artifactId>
+    </dependency>
+    <!-- Since Flyway 10, PostgreSQL-specific support (and every other
+         database) moved out of flyway-core into its own module. -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+
+    <!-- JUnit 5 + Spring Test + Mockito, for writing tests. "test" scope:
+         only present on the test classpath, never shipped in the jar. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Makes `mvn spring-boot:run` work and packages an executable
+           "fat jar" (all dependencies bundled in) on `mvn package`. -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <!-- Explicit version: we don't inherit spring-boot-starter-parent
+             (our own root pom is the parent instead), so this plugin has
+             no other way to know which Spring Boot release to match. -->
+        <version>${spring-boot.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>

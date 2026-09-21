@@ -1,0 +1,44 @@
+# Base configuration, loaded in every profile. Profile-specific files
+# (application-dev.yml, etc.) get added as those profiles are needed and
+# override anything set here.
+spring:
+  application:
+    name: cafefin-api
+
+  datasource:
+    # Connects as the "runtime" role (db/init/01-users.sh), which can only
+    # read/write rows, never change the schema — Flyway (Task 0.5) is the
+    # only thing that connects as "migration" and runs DDL.
+    url: jdbc:postgresql://localhost:5432/cafefin
+    username: runtime
+    # Read from the environment, never hard-coded (spec rule: secrets only
+    # from env vars, app must fail to start if this is missing).
+    password: ${RUNTIME_DB_PASSWORD}
+
+  jpa:
+    # No auto schema generation. The schema is owned entirely by Flyway
+    # migrations (Task 0.5) — Hibernate is only ever allowed to read the
+    # schema Flyway already created, never to create or alter it itself.
+    hibernate:
+      ddl-auto: none
+
+  flyway:
+    # Flyway gets its OWN connection, deliberately separate from the
+    # `spring.datasource.*` one above: it authenticates as "migration"
+    # (schema owner, can run DDL), while the app's normal JPA/Hikari
+    # connection pool above authenticates as "runtime" (DML only). This is
+    # what makes the dual-user split in db/init/01-users.sh actually mean
+    # something — without this, Flyway would inherit the runtime user and
+    # fail to create tables at all.
+    url: jdbc:postgresql://localhost:5432/cafefin
+    user: migration
+    password: ${MIGRATION_DB_PASSWORD}
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only expose /actuator/health over HTTP for now. Metrics/tracing
+        # endpoints get added in Layer 4 once there's something to observe.
+        include: health

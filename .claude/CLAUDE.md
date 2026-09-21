@@ -2,68 +2,52 @@
 
 @CONTEXT.md
 
-CafeFin: production-oriented Java/Fintech platform simulation (double-entry ledger, NAPAS payment
-gateway integration, Kafka events, KYC/AML compliance, HA/DR, multi-region). Greenfield — no code
-yet, built strictly capability-by-capability per `.claude/docs/specs/requirements.md`. Constraint:
-demo/learning scope only — never represented as a licensed/PCI-certified/regulatory-compliant
-financial service (see roadmap "Scope Boundary").
+CafeFin: production-oriented Java/Fintech simulation (double-entry ledger, NAPAS gateway, Kafka
+events, KYC/AML, HA/DR, multi-region). Greenfield, built capability-by-capability per
+`.claude/docs/specs/requirements.md`. Demo/learning scope only — never represented as
+licensed/PCI-certified/regulatory-compliant (roadmap § "Scope Boundary").
 
-Stack: Java 21/25 LTS + Spring Boot 4.1.x, PostgreSQL 16/17, Kafka 4.x (KRaft), React 19 +
-TypeScript + Vite frontend served same-origin from `cafefin-api`. `/clio:plan infra` settles the
-exact pinned versions and writes `rules/<stack>.md` once the repo scaffold exists.
+Stack: Java 25 LTS + Spring Boot 4.1.1, PostgreSQL 17, Kafka 4.x KRaft (pinned when planned), React
+19 + TS + Vite served same-origin from `cafefin-api`. Pin rationale: `.claude/docs/plans/infra.md`.
 
 ## Architecture
 
-Maven multi-module: `cafefin-common` (shared DTOs/exceptions), `cafefin-api` (primary app, serves
-REST + built React SPA), `cafefin-napas-mock` (Layer 2, mock external gateway),
-`cafefin-notification` (Layer 3, Kafka consumer extracted from `cafefin-api`'s `notification/`
-package). `frontend/cafefin-web` is the separate Node/TS source; its `dist/` is copied into
-`cafefin-api/src/main/resources/static/` at build time — same-origin monolith artifact, not SSR.
+Maven multi-module: `cafefin-common` (shared), `cafefin-api` (REST + built SPA), `cafefin-napas-mock`
+(Layer 2 gateway mock), `cafefin-notification` (Layer 3 Kafka consumer, extracted out of
+`cafefin-api`). `frontend/cafefin-web`'s `dist/` copies into
+`cafefin-api/src/main/resources/static/` — same-origin, not SSR.
 
-Within `cafefin-api`, packages are by domain, not by layer: `auth/`, `account/`, `ledger/`,
-`napas/`, `notification/`, `compliance/` (KYC/AML/regulatory), `backoffice/`, `reliability/`
-(HA/DR + multi-region). No default package, no global `model/` package — DTOs and entities live
-local to their domain package. JPA entities never cross the HTTP boundary directly.
+`cafefin-api` packages by domain: `auth/ account/ ledger/ napas/ notification/ compliance/
+backoffice/ reliability/`. No default package, no global `model/`. JPA entities never cross the
+HTTP boundary.
 
 ## Code style
 
-Monetary values: integer minor units (`long`/`BIGINT`) per ISO 4217 scale, never `double`/`float`.
-`BigDecimal` via String constructor for intermediate math, `compareTo()==0` for equality, JSON
-serialized as strings (`@JsonFormat(shape=STRING)`). Domain `Money` value object
-(`amountInMinorUnit`, `Currency`).
+Money: integer minor units per ISO 4217 scale, never `double`/`float`. `BigDecimal` via String
+constructor, `compareTo()==0` for equality, JSON as strings (`@JsonFormat(shape=STRING)`). Domain
+`Money(amountInMinorUnit, Currency)`.
 
-Errors: RFC 9457 `application/problem+json` via Spring's `ProblemDetail` — no proprietary error
-wrapper classes.
+Errors: RFC 9457 via Spring's `ProblemDetail`, no custom wrapper. UTC everywhere. No i18n —
+English/VND/USD only. Formatter (Spotless/Checkstyle) TBD by `/clio:plan infra`.
 
-Timestamps: UTC everywhere, convert at display layer only. No i18n/locale framework — English-only,
-VND/USD currency only.
-
-Formatter: Spotless or Checkstyle bound to Maven build phases — exact tool/config TBD by
-`/clio:plan infra`.
-
-## Project memory — how this repo records work
+## Project memory
 
 | Question | Home | Written by |
 |---|---|---|
-| Has it been *decided*? | `.claude/docs/specs/requirements.md` status column | humans + `/clio:update` |
-| What was *built*, when? | `.claude/clio/index.jsonl` | `/clio:memo` |
-| What is still *owed*? | `.claude/clio/debt.jsonl` | `/clio:memo`, `/clio:update` |
+| Decided? | `.claude/docs/specs/requirements.md` status col | humans + `/clio:update` |
+| Built? | `.claude/clio/index.jsonl` | `/clio:memo` |
+| Owed? | `.claude/clio/debt.jsonl` | `/clio:memo`, `/clio:update` |
 
-✅ means decided, never built. Never write build progress into a spec file, or a spec decision into
-the ledgers.
+✅ = decided, never built. Domains (only allowed `domain` values): `auth account ledger napas
+notification compliance backoffice reliability frontend infra all`.
 
-Domains — the only values allowed in the `domain` field of both ledgers, by business area served,
-never by directory: `auth` `account` `ledger` `napas` `notification` `compliance` `backoffice`
-`reliability` `frontend` `infra` `all`
-
-- Before non-trivial work in an area → run the `clio:context` skill.
-- Building a spec area → `/clio:plan <area>` first; one task at a time, its `Test` column is the
-  success criterion.
-- After finishing a piece of work → `/clio:memo`. What is owed → `clio:context`, which reads it.
-- A spec changed but the code hasn't → `/clio:update`; it records the delta and names the plans built
-  against the old decision. `/clio:ingest` and `/clio:update` are the only writers of `docs/specs/`.
-- Keep the `@CONTEXT.md` line above; keep this file and CONTEXT.md free of HTML comments.
-- New file in `.claude/rules/` → start it with `paths:` frontmatter, or it loads in every session.
+- Non-trivial work in an area → `clio:context` first.
+- New spec area → `/clio:plan <area>` before coding; each task's `Test` column is the pass bar.
+- Finished work → `/clio:memo`.
+- Spec changed, code didn't → `/clio:update` (records the delta, flags stale plans).
+  `/clio:ingest`/`/clio:update` are the only writers of `docs/specs/`.
+- New `.claude/rules/*.md` needs `paths:` frontmatter, or it loads every session.
+- Keep the `@CONTEXT.md` import above; keep both files free of HTML comments.
 
 ## Rules
 
@@ -78,7 +62,13 @@ never by directory: `auth` `account` `ledger` `napas` `notification` `compliance
 - **Name the success criterion before starting** — "tests for invalid inputs pass", "a test
   reproduces the bug, then passes". That is what `## Testing Done` records; nothing ran → say so,
   and `/clio:memo` files it `unverified`.
-- IMPORTANT: Write code comments only when the user asks for them.
+- IMPORTANT: **This overrides the generic "no comments unless asked" default** — CafeFin is a
+  learning project (Java + fintech), so code needs to teach, not just run. Write comments in
+  standard, plain English on every non-trivial file and code block: what the file/class/method is
+  for, and why a line does what it does when that's not obvious from the code itself (a locking
+  choice, a sign-convention detail, an idempotency step, a security constraint). Keep comments
+  concise — one or two lines, not paragraphs. Skip comments only on lines that are genuinely
+  self-explanatory (a getter, a trivial assignment).
 - **Never mutate `Account.balance`.** Balance is derived (`ΣCREDIT − ΣDEBIT` over immutable
   `LedgerEntry` rows) or read from `balanceAfter` on the latest entry by `entrySequence` — never by
   `id` or timestamp. Sign convention (credit-normal vs debit-normal) is fixed per account type; any

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  cafefin-napas-mock: a separate, standalone Spring Boot app that stands in
+  for the real external payment gateway (NAPAS). Living in its own module
+  (its own process, its own port) is what lets cafefin-api practice real
+  distributed-systems failure modes — timeouts, dropped responses, retries —
+  against something that isn't just an in-process fake.
+
+  Starter dependencies (spring-boot-starter-web, spring-boot-maven-plugin,
+  etc.) get added here once Layer 2 (NAPAS integration) is actually
+  implemented — this module is currently just a placeholder in the
+  multi-module build.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.cafefin</groupId>
+    <artifactId>cafefin</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>cafefin-napas-mock</artifactId>
+  <packaging>jar</packaging>
+
+  <name>cafefin-napas-mock</name>
+  <description>Mock external payment gateway service</description>
+</project>

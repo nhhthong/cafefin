@@ -1,0 +1,32 @@
+# Local development stack. Compose auto-loads variables from a `.env` file
+# in this same directory (copy env.example to `.env` first, see that file
+# for what each variable means).
+services:
+  postgres:
+    image: postgres:17.11
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Read by db/init/01-users.sh on first container start, to create the
+      # migration (DDL) and runtime (DML-only) database roles.
+      MIGRATION_DB_PASSWORD: ${MIGRATION_DB_PASSWORD}
+      RUNTIME_DB_PASSWORD: ${RUNTIME_DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      # Named volume: data survives `docker compose down` (only `down -v`
+      # removes it), so restarting the stack doesn't wipe the ledger.
+      - pgdata:/var/lib/postgresql/data
+      # Scripts here run once, only the very first time the volume above is
+      # created empty — this is how the dual-user setup gets applied.
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

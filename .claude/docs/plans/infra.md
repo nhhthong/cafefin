@@ -26,11 +26,11 @@ in Task 3.1, Layer 3); pin it when `/clio:plan notification` runs.
 
 | # | Task | req | Test that proves it | Needs | Done |
 |---|------|-----|---------------------|-------|------|
-| 0.1 | Toolchain on PATH: JDK 25, Maven 3.9.16, Docker Engine + Compose | 0 | `java -version` reports 25.x, `mvn -version` reports 3.9.16, `docker compose version` exits 0 | – | [ ] |
-| 0.2 | Parent `pom.xml` (`packaging=pom`) with modules `cafefin-common`, `cafefin-api`, `cafefin-napas-mock`, `cafefin-notification` | 0 | `mvn validate` exits 0 from repo root | 0.1 | [ ] |
-| 0.3 | `cafefin-api` Spring Boot 4.1.1 baseline (Web, Data JPA, PostgreSQL Driver, Validation, Actuator) boots | 0 | `mvn -pl cafefin-api spring-boot:run` then `curl -s localhost:8080/actuator/health` returns `{"status":"UP"}` | 0.2 | [ ] |
-| 0.4 | PostgreSQL 17.11 in `docker-compose.yml` with persistent volume, dual `migration`/`runtime` DB users | 0 | `docker compose up -d postgres` then `psql -h localhost -U runtime -c 'select 1'` exits 0; `psql ... -U runtime -c 'create table t()'` fails (no DDL grant) | 0.1 | [ ] |
-| 0.5 | Flyway baseline migration (`V1__init.sql`) auto-runs on `cafefin-api` startup | 0 | On app start, `select version from flyway_schema_history order by installed_rank desc limit 1` returns `1` | 0.3, 0.4 | [ ] |
+| 0.1 | Toolchain on PATH: JDK 25, Maven 3.9.16, Docker Engine + Compose | 0 | `java -version` reports 25.x, `mvn -version` reports 3.9.16, `docker compose version` exits 0 | – | [x] 2026-09-21 |
+| 0.2 | Parent `pom.xml` (`packaging=pom`) with modules `cafefin-common`, `cafefin-api`, `cafefin-napas-mock`, `cafefin-notification` | 0 | `mvn validate` exits 0 from repo root | 0.1 | [x] 2026-09-21 |
+| 0.3 | `cafefin-api` Spring Boot 4.1.1 baseline (Web, Data JPA, PostgreSQL Driver, Validation, Actuator) boots | 0 | `mvn -pl cafefin-api spring-boot:run` then `curl -s localhost:8080/actuator/health` returns `{"status":"UP"}` | 0.2, 0.4 | [x] 2026-09-21 |
+| 0.4 | PostgreSQL 17.11 in `docker-compose.yml` with persistent volume, dual `migration`/`runtime` DB users | 0 | `docker compose up -d postgres` then `psql -h localhost -U runtime -c 'select 1'` exits 0; `psql ... -U runtime -c 'create table t()'` fails (no DDL grant) | 0.1 | [x] 2026-09-21 |
+| 0.5 | Flyway baseline migration (`V1__init.sql`) auto-runs on `cafefin-api` startup | 0 | On app start, `select version from flyway_schema_history order by installed_rank desc limit 1` returns `1` | 0.3, 0.4 | [x] 2026-09-21 |
 | 0.6 | Testcontainers integration test scaffold (`spring-boot-testcontainers`, `org.testcontainers:postgresql`, static `@Container` + `@ServiceConnection`) | 0 | `mvn -pl cafefin-api test` exits 0, context-load test passes | 0.3 | [ ] |
 | 0.7 | Frontend scaffold: `frontend/cafefin-web` — Node 24, Vite 8.3.0, React 19.3.0, TypeScript `strict: true` | 0 | `node -v` reports v24.x; `npm create vite@latest cafefin-web -- --template react-ts` exits 0; `npm run build` exits 0 | 0.1 | [ ] |
 | 0.8 | Frontend test runner (Vitest) runs on the scaffold | 0 | `npm test` (vitest run) exits 0 on the default scaffolded test | 0.7 | [ ] |

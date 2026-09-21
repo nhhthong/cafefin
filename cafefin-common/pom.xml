@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  cafefin-common: a plain library module (packaging=jar, not a runnable app).
+  Holds code every other module needs — shared DTOs, domain exceptions,
+  small utilities — so cafefin-api, cafefin-napas-mock, and cafefin-notification
+  can all depend on it without duplicating that code three times.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Inherits groupId, version, Java release, and the Spring Boot BOM
+       from the root pom.xml — nothing here needs to repeat them. -->
+  <parent>
+    <groupId>com.cafefin</groupId>
+    <artifactId>cafefin</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>cafefin-common</artifactId>
+  <packaging>jar</packaging>
+
+  <name>cafefin-common</name>
+  <description>Shared DTOs, domain exceptions, and utilities</description>
+</project>

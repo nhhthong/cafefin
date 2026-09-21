@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  cafefin-notification: a standalone Spring Boot app that consumes Kafka
+  events (e.g. "transaction.completed") and turns them into user
+  notifications (email via Mailpit in dev). It starts empty here on
+  purpose — in Layer 1 this delivery logic first lives directly inside
+  cafefin-api, and only gets extracted into this separate module in
+  Layer 3, once the Kafka outbox/consumer pattern is in place.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.cafefin</groupId>
+    <artifactId>cafefin</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>cafefin-notification</artifactId>
+  <packaging>jar</packaging>
+
+  <name>cafefin-notification</name>
+  <description>Kafka-driven notification consumer</description>
+</project>

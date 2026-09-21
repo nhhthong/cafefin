@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Root (parent) POM for the CafeFin multi-module project.
+
+  "packaging=pom" means this module builds nothing itself — it only exists to:
+  1. list the child modules Maven should build (see <modules> below), and
+  2. hand every child a shared groupId/version and a shared dependency BOM
+     (via <dependencyManagement>), so we pin one Spring Boot version once
+     instead of repeating it in every module's pom.xml.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.cafefin</groupId>
+  <artifactId>cafefin</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>CafeFin</name>
+  <description>Production-oriented Java/Fintech platform simulation</description>
+
+  <properties>
+    <!-- Target JDK 25 (LTS) for every module's compiled bytecode. -->
+    <maven.compiler.release>25</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Single source of truth for the Spring Boot version, referenced below
+         and by cafefin-api's spring-boot-maven-plugin. -->
+    <spring-boot.version>4.1.1</spring-boot.version>
+  </properties>
+
+  <!--
+    dependencyManagement (as opposed to plain <dependencies>) does not add any
+    jar to the build by itself. It only records "if a child module declares
+    this dependency, use this exact version" — this is how we avoid pinning
+    Spring Boot's version separately in every starter a module pulls in.
+  -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <!-- "import" scope merges this BOM's own <dependencyManagement>
+             into ours, instead of adding spring-boot-dependencies itself
+             as a dependency. -->
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <!-- Every module Maven builds when you run a command from the repo root. -->
+  <modules>
+    <module>cafefin-common</module>
+    <module>cafefin-api</module>
+    <module>cafefin-napas-mock</module>
+    <module>cafefin-notification</module>
+  </modules>
+</project>
