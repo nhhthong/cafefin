@@ -28,5 +28,28 @@ services:
       timeout: 5s
       retries: 10
 
+  cafefin-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      # Waits for the healthcheck above, not just container start, so the
+      # app never races Postgres's own startup before Flyway connects.
+      postgres:
+        condition: service_healthy
+    environment:
+      # "postgres" here is the Compose service name above, resolved via
+      # Docker's internal DNS — NOT "localhost", which inside this
+      # container would mean cafefin-api itself. This overrides the
+      # localhost URLs baked into application.yml for local (non-Docker)
+      # dev (see CONTEXT.md landmines).
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_FLYWAY_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      RUNTIME_DB_PASSWORD: ${RUNTIME_DB_PASSWORD}
+      MIGRATION_DB_PASSWORD: ${MIGRATION_DB_PASSWORD}
+    ports:
+      - "8080:8080"
+
 volumes:
   pgdata:

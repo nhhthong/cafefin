@@ -97,6 +97,31 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <!-- Spring Boot's Testcontainers glue: gives us @ServiceConnection, which
+         wires a container's JDBC URL/credentials straight into Spring's
+         DataSource without hand-written @DynamicPropertySource plumbing. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-testcontainers</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Testcontainers' PostgreSQL module: launches a real Postgres 17 in
+         Docker for integration tests, so tests run against the same engine
+         as production instead of an in-memory substitute. Testcontainers
+         2.x renamed the module artifacts with a "testcontainers-" prefix
+         (was bare "postgresql"/"junit-jupiter" in 1.x). -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- JUnit 5 integration for Testcontainers (@Testcontainers, @Container). -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -110,6 +135,17 @@
              (our own root pom is the parent instead), so this plugin has
              no other way to know which Spring Boot release to match. -->
         <version>${spring-boot.version}</version>
+        <executions>
+          <execution>
+            <!-- Also explicit: without spring-boot-starter-parent, this
+                 goal isn't bound to the `package` phase by default, so
+                 `mvn package` silently produces a plain (non-executable)
+                 jar — "no main manifest attribute" at `java -jar` time. -->
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

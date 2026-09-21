@@ -1,0 +1,18 @@
+# Test-only config. src/test/resources wins over src/main/resources on the
+# test classpath, so this fully replaces the main application.yml for
+# tests — no RUNTIME_DB_PASSWORD/MIGRATION_DB_PASSWORD env vars needed here.
+#
+# datasource and flyway URLs are deliberately left unset: @ServiceConnection
+# on the Testcontainers PostgreSQLContainer (see
+# CafefinApiApplicationTests) registers a JdbcConnectionDetails bean that
+# both the JPA datasource and Flyway pick up automatically when no explicit
+# url/user/password is configured. Production keeps Flyway on a separate
+# "migration" role (see main application.yml); that role split isn't
+# exercised here since this scaffold's only job is proving the container
+# wiring works end to end.
+spring:
+  application:
+    name: cafefin-api
+  jpa:
+    hibernate:
+      ddl-auto: none
