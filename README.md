@@ -1,6 +1,5 @@
 <div align="center">
   <img src="resources/cafefin_icon.png" alt="CafeFin logo" width="220" height="220" style="border-radius: 16px; margin-bottom: 8px;" />
-  <h1>CafeFin</h1>
 
   <p>A Java/Spring fintech platform, built as a deep-dive simulation: double-entry ledger, external payment gateway, event-driven notifications, compliance, and multi-region resilience.</p>
 
