@@ -31,41 +31,25 @@ better, as a comment in the source file it explains — instead of pointing at i
 months from now, or a contributor who never had `.claude/` at all, has to get the full picture from
 the public doc and the code alone.
 
-## The rule that overrides everything else here: verify, don't guess
+## Verify against the running stack — never guess
 
-This project's CLAUDE.md says it plainly: anything a tool can check gets checked before it's
-stated, and an ambiguous case gets a question, not an invented answer. Docs are the easiest place
-to violate that rule by accident — it's tempting to write "returns `400` with a `field` array"
-because that's what Spring *usually* does, without checking that this specific endpoint, in this
-specific Boot version, with this specific config, actually does that. This repo has already hit
-several Boot-4.x surprises this way (see `.claude/CONTEXT.md`'s Landmine entries) — the defaults
-are not always what you'd expect.
+CLAUDE.md's rule: anything a tool can check gets checked before it's stated. The dev stack
+(`postgres` + `cafefin-api`) runs via `docker compose up --watch` for the whole implementation
+session — `develop.watch` in `docker-compose.yml` rebuilds and recreates `cafefin-api`
+automatically on every source change, so the running container always matches the code on disk.
+Verification is a `curl` against it, not a reconstruction of what Spring *usually* does — this repo
+has already hit enough Boot-4.x surprises (`.claude/CONTEXT.md`'s Landmine entries) that "usually"
+isn't reliable here. `docker compose ps` confirms the stack is up if in doubt; it's not something
+you start or rebuild by hand.
 
-So before writing a request/response shape, a status code, or an error body into a doc:
-
-1. **Read the real code.** The controller (`@PostMapping`/`@GetMapping` path, `@RequestBody` type),
-   the request DTO (validation annotations), the service (what exceptions it can actually throw),
-   the response DTO (exactly which fields it has).
-2. **Run it for real and capture the output.** Don't reconstruct a JSON body from memory:
-
-   ```bash
-   docker compose up -d postgres
-   docker compose up --build -d          # same-origin stack; or `mvn -pl cafefin-api
-                                          # org.springframework.boot:spring-boot-maven-plugin:4.1.1:run`
-                                          # if you don't need the full Docker build
-   curl -s -i -X POST localhost:8080/api/v1/auth/register \
-     -H "Content-Type: application/json" -d '{"email":"...","password":"..."}'
-   docker compose down                   # clean up when done
-   ```
-
-   Exercise the happy path *and* every realistic failure the code actually handles — a validation
-   error, a conflict, a malformed body, a wrong `Content-Type`. Paste the real status line and JSON
-   body into the doc, not a paraphrase.
-3. **If a behavior isn't implemented yet** (a rate limit that's planned but not built, an error
-   case nobody wrote a handler for), say so in the doc in plain prose — "no rate limit yet" — rather
-   than describing what it *will* do once built, and without citing *where* it's planned (that's a
-   `.claude/` path — see above). A reader following the doc should never hit a surprise the doc
-   didn't warn them about, and never hit a dead link either.
+1. **Read the real code** — controller path and `@RequestBody` type, the service's exception
+   paths, the response DTO's exact fields.
+2. **Curl it for real** — the happy path and every failure the code handles (validation error,
+   conflict, malformed body, wrong `Content-Type`). Paste the actual status line and JSON body,
+   never a paraphrase.
+3. **Not built yet** (a planned rate limit, an error case with no handler)? Say so in plain prose —
+   "no rate limit yet" — never describe the eventual behavior, and never cite *where* it's planned
+   (that's a `.claude/` path — see above).
 
 ## Writing a flow guide
 
@@ -87,9 +71,8 @@ A few things that make these docs worth reading rather than restating the code i
   public repo, that's worth fixing at the source (add the comment) rather than working around by
   guessing at a reason that merely sounds plausible.
 - **The Errors table lists only what's actually implemented.** Every row should be something you
-  personally triggered with curl in this session (or can point at a specific, recently-verified
-  test). No row for a status code the framework *might* return in some configuration you haven't
-  checked.
+  personally triggered against the running stack. No row for a status code the framework *might*
+  return in some configuration you haven't checked.
 - **Filename** matches the existing convention — `REGISTER.md`, `INFRA.md` (SCREAMING_SNAKE /
   PascalCase), not `register.md` or `register-flow.md`.
 
@@ -147,16 +130,16 @@ non-obvious reason (a plain getter, a straightforward field mapping) doesn't nee
 
 ## Non-flow guides (INFRA.md-style)
 
-Setup/operational guides aren't one-per-endpoint and have no fixed section template, but the
-verify-don't-guess rule still applies at the command level: every command shown in the guide should
-have actually been run (this session or very recently) before it's written down. If the underlying
-setup changed since a command was last verified — a new env var, a renamed script, a moved file —
-re-run the command rather than trusting the old doc or your own memory of how it used to work.
+Setup/operational guides aren't one-per-endpoint and have no fixed section template, but the same
+verify-against-the-running-stack rule applies at the command level: every command shown should have
+actually been run, against the current code, before it's written down. Setup changed since a
+command was last verified — a new env var, a renamed script, a moved file — re-run it rather than
+trusting the old doc or memory.
 
 ## Before calling it done
 
-Re-read the finished doc once against the real curl output and the real code — a wrong field name
-or status code in a doc is worse than no doc, because it actively misleads the next reader. If
-`.claude/clio/` is in use in this repo, doc changes are "files changed" like any other source
-change and belong in whatever `/clio:memo` run covers this piece of work — mention them when that
-runs, but don't invoke `/clio:memo` yourself unless the user asks for it.
+Re-read the finished doc once against the actual `curl` output and the real code — a wrong field
+name or status code misleads the next reader worse than no doc at all. If this repo's `.claude/clio/`
+workflow is in use, doc changes are "files changed" like any other source change and belong in
+whatever `/clio:memo` run covers this piece of work — mention them when that runs, but don't invoke
+`/clio:memo` yourself unless asked.

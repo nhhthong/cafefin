@@ -10,6 +10,7 @@ own guide, instead of dumping everything into one file.
 |---|---|
 | Infra: prerequisites, env vars, DB, running/testing the backend, frontend, same-origin Docker deployment, known pitfalls | [`docs/INFRA.md`](docs/INFRA.md) |
 | Auth flow: `POST /api/v1/auth/register` — contract, sequence diagram, error bodies | [`docs/REGISTER.md`](docs/REGISTER.md) |
+| Auth flow: `POST /api/v1/auth/login` — RS256 access token, refresh token, enumeration-safe errors | [`docs/LOGIN.md`](docs/LOGIN.md) |
 
 ## Source layout
 

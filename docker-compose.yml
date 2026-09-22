@@ -50,6 +50,25 @@ services:
       MIGRATION_DB_PASSWORD: ${MIGRATION_DB_PASSWORD}
     ports:
       - "8080:8080"
+    # `docker compose watch` (not plain `up`) rebuilds + recreates this
+    # service automatically whenever a watched path changes — the image
+    # only ever runs the multi-stage Dockerfile build in the background as
+    # part of the watch, never a source snapshot that's silently gone
+    # stale. `action: rebuild` re-runs the same Dockerfile `--build` would,
+    # just triggered by the file save instead of a command you have to
+    # remember to type.
+    develop:
+      watch:
+        - action: rebuild
+          path: cafefin-api
+        - action: rebuild
+          path: frontend/cafefin-web/src
+        - action: rebuild
+          path: frontend/cafefin-web/index.html
+        - action: rebuild
+          path: pom.xml
+        - action: rebuild
+          path: Dockerfile
 
 volumes:
   pgdata:

@@ -48,11 +48,17 @@ npm run build   # tsc -b && vite build -> dist/
 npm test        # vitest run
 
 # 6. Full stack, same-origin (Docker, builds frontend + backend into one image)
-docker compose up --build
+docker compose up --watch
 curl -s localhost:8080/actuator/health   # API
 curl -s localhost:8080/                  # SPA index.html, same origin
 docker compose down   # add -v to also wipe the Postgres volume (deletes local data)
 ```
+
+`--watch` (not plain `--build`) keeps the stack running and rebuilds `cafefin-api` automatically
+whenever a watched path changes (`develop.watch` in `docker-compose.yml`) — save a file, the
+container rebuilds and recreates itself in the background, usually within ~15s. No more manually
+re-running `--build` and no risk of testing against a stale image. Plain `docker compose up --build`
+still works for a one-shot rebuild (e.g. in a script or CI) when you don't want the watcher running.
 
 Migrations: `cafefin-api/src/main/resources/db/migration/V<n>__description.sql`, Flyway-run on
 every backend startup. Immutable once applied — a fix is always a new `V<n+1>` file.

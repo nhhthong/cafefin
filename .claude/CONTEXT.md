@@ -61,6 +61,14 @@ applies to everything in this file too.
   `org.springframework.boot.webmvc.test.autoconfigure`. Same split pattern as `spring-boot-webmvc`
   for the main autoconfig and `spring-boot-flyway` for Flyway — suspect it for any other Boot 4.x
   test-support class that seems to have vanished.
+- **Landmine**: adding `spring-boot-starter-security` with no `UserDetailsService` bean anywhere
+  makes Boot auto-generate a random in-memory user and log its password at WARN on every startup
+  (`UserDetailsServiceAutoConfiguration`, module `spring-boot-security`, package
+  `org.springframework.boot.security.autoconfigure` in 4.1.1 — not the pre-Boot-4 path). Harmless
+  if the app never uses Spring Security's `UserDetailsService`/`AuthenticationManager` (e.g. a
+  custom JWT filter that sets `SecurityContext` directly, as `cafefin-api`'s does), but it looks
+  like a real leaked credential in the logs and is dead weight either way. Fix: exclude it
+  explicitly — `@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)`.
 
 ## Core Entities
 

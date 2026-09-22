@@ -103,6 +103,7 @@ Endpoints use JSON. Only what's actually built ships here.
 | Method | Path | Auth | Description | Flow Guide |
 |---|---|:---:|---|:---:|
 | `POST` | `/api/v1/auth/register` | No | Register a new user (`email`, `password`) | [View Flow](resources/docs/REGISTER.md) |
+| `POST` | `/api/v1/auth/login` | No | Log in, receive an access token + refresh token | [View Flow](resources/docs/LOGIN.md) |
 
 ## Documentation
 
