@@ -2,7 +2,8 @@
 
 [← Back to docs index](../TUTORIAL.md)
 
-Setup + run CafeFin infra (Task 0.1–0.9). Full rationale: [`.claude/docs/plans/infra.md`](../../.claude/docs/plans/infra.md).
+Setup + run CafeFin's infrastructure layer: toolchain, database, backend, frontend, and same-origin
+Docker deployment.
 
 ## Prerequisites
 
@@ -74,6 +75,4 @@ every backend startup. Immutable once applied — a fix is always a new `V<n+1>`
 
 `docker-compose.yml`, `Dockerfile` (3-stage: node → maven → jre), `db/init/01-users.sh`,
 `cafefin-api/src/main/resources/application.yml` (+ `src/test/resources/application.yml` for
-tests), `frontend/cafefin-web/vite.config.ts`. Task history:
-[`.claude/docs/tasks/infra/`](../../.claude/docs/tasks/infra/),
-[`.claude/docs/tasks/frontend/`](../../.claude/docs/tasks/frontend/).
+tests), `frontend/cafefin-web/vite.config.ts`.

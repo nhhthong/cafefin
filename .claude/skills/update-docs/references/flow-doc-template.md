@@ -81,8 +81,11 @@ code / error condition, matching the Errors table below exactly.
 Numbered list, one step per meaningful thing the code does in order. For each step:
 - Name the real method/class it happens in.
 - If the code made a deliberate choice a reader might question (skipped a check, chose one
-  approach over an obvious alternative), say why — pull the reasoning from code comments or the
-  matching `.claude/docs/tasks/<domain>/` doc if it's already written down there.
+  approach over an obvious alternative), say why — pull the reasoning from the source's own
+  comments (never from `.claude/`, which won't be in the public repo).
+- Teach, don't just narrate: if the step leans on a Java/Spring/fintech concept a learner might not
+  already know, spend a sentence on *why* it works that way, not just *what* it does — see
+  `SKILL.md`'s "Teach the why" section for the kind of explanation that's worth including.
 - Don't invent behavior that "would make sense" but that you haven't confirmed the code does.
 
 ---

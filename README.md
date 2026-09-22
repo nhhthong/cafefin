@@ -70,9 +70,7 @@ cafefin/                           Parent pom, packaging=pom
 ├── cafefin-napas-mock/            Mock external payment gateway
 ├── cafefin-notification/          Kafka notification consumer
 ├── frontend/cafefin-web/          React + TypeScript + Vite source
-├── docs/adr/                      Architecture Decision Records
-├── resources/                     Static assets (this README's logo, etc.)
-├── .claude/                       Project memory: spec, plans, decision ledger
+├── resources/                     Static assets, dev guides (resources/docs/, TUTORIAL.md)
 └── docker-compose.yml
 ```
 
@@ -99,8 +97,7 @@ transactions, so there's no manual SQL to run.
 
 ## REST API Summary
 
-Endpoints use JSON. Only what's actually built ships here — see
-[`.claude/docs/plans/`](.claude/docs/plans/) for what's planned but not yet implemented.
+Endpoints use JSON. Only what's actually built ships here.
 
 ### Auth Endpoints
 | Method | Path | Auth | Description | Flow Guide |
@@ -109,26 +106,16 @@ Endpoints use JSON. Only what's actually built ships here — see
 
 ## Documentation
 
-- [`.claude/docs/specs/cafefin_roadmap_v4.md`](.claude/docs/specs/cafefin_roadmap_v4.md): the
-  source roadmap, with requirements, ADR triggers, and verification criteria.
-- [`.claude/docs/specs/requirements.md`](.claude/docs/specs/requirements.md): per-requirement
-  decision status, indexed by task number.
-- [`.claude/docs/specs/memory/`](.claude/docs/specs/memory/): the distilled spec, one file per
-  domain area.
-- [`.claude/docs/plans/`](.claude/docs/plans/): the implementation plan per area, with each task
-  tied to the test that proves it.
-- `docs/adr/`: Architecture Decision Records for the contested engineering trade-offs, including
-  locking strategy, isolation level, idempotency boundaries, `IN_DOUBT` handling, and Kafka
-  ordering versus liveness.
+Developer guides — setup, and a flow doc per REST endpoint (contract, sequence diagram, error
+cases) — are indexed in [`resources/TUTORIAL.md`](resources/TUTORIAL.md).
 
 ## Production readiness
 
-Completing this roadmap demonstrates engineering patterns for a real fintech platform, but it does
-not by itself establish regulatory compliance, licensing, PCI certification, production
-bank-network approval, or operational readiness for real customer funds. A real deployment would
-additionally need a jurisdiction-specific legal entity, regulatory licensing, contracted providers,
-independent security assessment, and validated operational procedures. The roadmap's
-"Production-Readiness Risk Assessment" section has the full breakdown.
+Building this system demonstrates engineering patterns for a real fintech platform, but it does not
+by itself establish regulatory compliance, licensing, PCI certification, production bank-network
+approval, or operational readiness for real customer funds. A real deployment would additionally
+need a jurisdiction-specific legal entity, regulatory licensing, contracted providers, independent
+security assessment, and validated operational procedures.
 
 ## License
 

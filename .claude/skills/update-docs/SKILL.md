@@ -15,6 +15,22 @@ Three files/dirs make up this repo's dev-facing docs, and they reference each ot
 
 A new endpoint touches all three. A docs-only fix (stale command, wrong status code) touches one.
 
+## These docs must stand on their own — never cite `.claude/`
+
+`.claude/` (specs, plans, task history, the decision ledger) is this project's *internal* working
+memory — notes Claude and the maintainer use while building, not something a reader of this repo
+is guaranteed to have. It's slated to be gitignored, so a link into it becomes a dead link the
+moment someone clones the repo fresh or browses it on GitHub. Treat it the way you'd treat your own
+scratch notes: useful while you're the one writing the doc, never something the *finished* doc
+depends on.
+
+Concretely: never write a path like `.claude/docs/plans/auth.md` or `.claude/docs/tasks/auth/...`
+into `resources/docs/*.md`, `TUTORIAL.md`, or `README.md`, not even as a "see also". If a fact only
+exists in a `.claude/docs/tasks/` note right now, restate it — in the flow doc's own prose, or
+better, as a comment in the source file it explains — instead of pointing at it. A reader six
+months from now, or a contributor who never had `.claude/` at all, has to get the full picture from
+the public doc and the code alone.
+
 ## The rule that overrides everything else here: verify, don't guess
 
 This project's CLAUDE.md says it plainly: anything a tool can check gets checked before it's
@@ -45,10 +61,11 @@ So before writing a request/response shape, a status code, or an error body into
    Exercise the happy path *and* every realistic failure the code actually handles — a validation
    error, a conflict, a malformed body, a wrong `Content-Type`. Paste the real status line and JSON
    body into the doc, not a paraphrase.
-3. **If a behavior isn't implemented yet** (a rate limit the plan lists but hasn't been built, an
-   error case nobody wrote a handler for), say so in the doc — a note in Contract, or just omit the
-   row from Errors — rather than describing what it *will* do once built. A reader following the
-   doc should never hit a surprise the doc didn't warn them about.
+3. **If a behavior isn't implemented yet** (a rate limit that's planned but not built, an error
+   case nobody wrote a handler for), say so in the doc in plain prose — "no rate limit yet" — rather
+   than describing what it *will* do once built, and without citing *where* it's planned (that's a
+   `.claude/` path — see above). A reader following the doc should never hit a surprise the doc
+   didn't warn them about, and never hit a dead link either.
 
 ## Writing a flow guide
 
@@ -62,17 +79,56 @@ A few things that make these docs worth reading rather than restating the code i
 - **Sequence diagram participants are the real class/method names** (`AuthController.register`,
   `AuthService.register`), not generic labels like "Controller" — a reader should be able to jump
   from the diagram straight into the source.
-- **Step-by-step explains *why*, and that "why" is usually already written down.** Non-obvious
-  choices in the code (a race avoided by leaning on a DB constraint instead of a check-then-insert,
-  a deliberately-omitted validation rule) are already explained in code comments and in the
-  matching task doc under `.claude/docs/tasks/<domain>/`. Pull from there instead of re-deriving
-  the reasoning from scratch — and instead of guessing at a reason that sounds plausible.
+- **Step-by-step explains *why*, and that "why" should already be in the code.** Non-obvious
+  choices (a race avoided by leaning on a DB constraint instead of a check-then-insert, a
+  deliberately-omitted validation rule) are already explained in the source's own comments — this
+  project's CLAUDE.md requires exactly that ("comments teach, they don't just narrate"). Pull the
+  reasoning from there. If a real reason exists but nobody wrote it down anywhere reachable from the
+  public repo, that's worth fixing at the source (add the comment) rather than working around by
+  guessing at a reason that merely sounds plausible.
 - **The Errors table lists only what's actually implemented.** Every row should be something you
   personally triggered with curl in this session (or can point at a specific, recently-verified
   test). No row for a status code the framework *might* return in some configuration you haven't
   checked.
 - **Filename** matches the existing convention — `REGISTER.md`, `INFRA.md` (SCREAMING_SNAKE /
   PascalCase), not `register.md` or `register-flow.md`.
+
+## Teach the *why* — this is a learning repo, not just an API reference
+
+CLAUDE.md states this outright: CafeFin exists to teach Java + fintech together, and code comments
+exist to teach, not just narrate. A flow doc inherits that same job. `## 3. Step by step` is where
+it happens — don't stop at describing what a line does; say why it does it that way, aimed at
+someone learning both Java/Spring and the fintech domain at once who might not already know the
+underlying concept.
+
+Concretely, "what" vs. "the why that actually teaches something":
+- *what*: `BCryptPasswordEncoder.encode(password)` hashes the password.
+- *why*: BCrypt is a **one-way** hash, not encryption — there's no `decode()`. That's why login can
+  only ever *compare* (`matches()`, re-hash the attempt and check it matches), never recover the
+  original password — and why a real "forgot password" flow can only issue a new one, never email
+  the old one back.
+
+A few concepts that recur across this codebase are worth spelling out the first time a flow doc
+touches them (a later doc that reuses the same pattern can just point back at the earlier one
+instead of re-explaining it at length):
+
+- Why a database `UNIQUE` constraint beats an application-level "check, then insert" once two
+  requests can run at the same time — only the database can arbitrate that race atomically.
+- Why an `@Entity` never gets serialized straight to JSON — a dedicated request/response DTO is
+  what keeps internal fields (a password hash, an internal flag) from leaking, and keeps the HTTP
+  contract stable even if the database schema changes shape later.
+- Why a *fintech* app specifically cares about things a hobby CRUD app might not: a sequential
+  primary key leaking row count/growth rate matters more here; a timestamp stored as an absolute
+  instant (`Instant` / `TIMESTAMPTZ`), not a local time, matters for anything that gets audited or
+  reconciled across time zones.
+- Why an error becomes a structured `ProblemDetail` (RFC 9457) instead of a bare string or a stack
+  trace — the caller (a UI, or another service) needs a *machine-parseable* reason to decide what
+  to do next, not prose written for a human to read.
+
+Keep each explanation to one or two sentences, tied to the exact line of code that prompted it —
+this isn't a Java tutorial bolted onto an API doc, it's the same "explain the non-obvious, skip the
+self-explanatory" instinct CLAUDE.md already asks of every code comment. A step with no real
+non-obvious reason (a plain getter, a straightforward field mapping) doesn't need one manufactured.
 
 ## Wiring a new guide into the index and README
 
