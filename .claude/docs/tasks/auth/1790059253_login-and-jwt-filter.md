@@ -1,7 +1,7 @@
 # Login + JWT Filter
 Date: 2026-09-22
 Updated: 2026-09-22
-Commit: not committed
+Commit: 43c9edf
 Plan tasks: 1.1.4, 1.1.5, 1.1.6, 1.1.7, 1.1.8, 1.1.9, 1.1.10
 
 ## Summary
@@ -49,6 +49,13 @@ other endpoint (rejects missing tokens, accepts valid ones, tolerates a 60s cloc
 - `cafefin-api/src/test/java/com/cafefin/api/auth/JwtAuthenticationFilterTest.java` — new, unit-level
   (no Spring context/Testcontainers): valid token authenticates; token expired 30s ago (inside
   skew) still authenticates; token expired 90s ago (outside skew) doesn't
+- `cafefin-api/src/main/java/com/cafefin/api/auth/ProblemDetailAuthenticationEntryPoint.java` — new,
+  replaces `SecurityConfig`'s original `HttpStatusEntryPoint(401)` (see Decisions: found via live
+  curl, not a test)
+- `resources/docs/LOGIN.md` — new flow guide (Contract/Sequence/Step-by-step/Errors), real JWT and
+  401 `ProblemDetail` bodies captured via a temporary debug print in `LoginEndpointTest`, reverted
+  after
+- `resources/TUTORIAL.md`, `README.md` — added the login row/guide link (`/update-docs`)
 
 ## Decisions
 - JJWT `0.13.0` (verified current via context7, not assumed) for building/parsing the JWT — chosen
@@ -92,6 +99,14 @@ other endpoint (rejects missing tokens, accepts valid ones, tolerates a 60s cloc
   a token built at `now-59s`). Switched to `now-30s` (comfortably inside) / `now-90s` (comfortably
   outside) — proves the same tolerance behavior without pinning a margin too thin for the
   computation the test itself does. Noted in `auth.md`'s own row, not silently changed.
+- `ProblemDetailAuthenticationEntryPoint` replaces `HttpStatusEntryPoint(401)`: found live via
+  `curl -i` against a bare protected path with no `Authorization` header — Spring Security's
+  `HttpStatusEntryPoint` calls `response.sendError()` directly, which bypasses Boot's MVC-level
+  `problemdetails` rendering entirely (the security filter chain rejects the request before Spring
+  MVC's dispatcher ever runs). Hand-built `ProblemDetail` + injected Jackson `ObjectMapper` instead,
+  so a missing/invalid token returns the same RFC 9457 shape as every other error in this app.
+  Verified live: `{"detail":"authentication required","instance":"/api/v1/whatever","status":401,
+  "title":"Unauthorized"}`.
 
 ## Side Effects
 - `PasswordEncoder` (from task 1.1.2) and the `KeyPair`/`JwtService` here are shared beans — any
@@ -113,6 +128,11 @@ other endpoint (rejects missing tokens, accepts valid ones, tolerates a 60s cloc
   authenticates as its `sub` (1.1.9); token expired 30s ago still authenticates, 90s ago doesn't
   (1.1.10, see Decisions for the 59/61 → 30/90 deviation).
 - 2026-09-22 — `mvn -pl cafefin-api test` (full suite): 13/13 passed, `BUILD SUCCESS`.
+- 2026-09-22 — live Docker (`docker compose up --watch`) + `curl -i localhost:8080/api/v1/whatever`
+  (no `Authorization` header): `401` with RFC 9457 body confirming
+  `ProblemDetailAuthenticationEntryPoint` fix (see Decisions).
+- 2026-09-22 — `SecurityConfigTest` extended with `jsonPath("$.status").value(401)` /
+  `jsonPath("$.instance")` assertions locking the RFC 9457 shape.
 
 ## Related
 - `.claude/docs/tasks/auth/1790047106_register-endpoint.md` — the register endpoint this login flow
@@ -130,3 +150,5 @@ other endpoint (rejects missing tokens, accepts valid ones, tolerates a 60s cloc
 
 ## Change Log
 - 2026-09-22 — initial
+- 2026-09-22 — added `ProblemDetailAuthenticationEntryPoint` fix (401 now RFC 9457, was empty body)
+  and `resources/docs/LOGIN.md`

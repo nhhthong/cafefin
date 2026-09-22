@@ -1,7 +1,7 @@
 # Backend Scaffold
 Date: 2026-09-21
 Updated: 2026-09-22
-Commit: 88fae6c, 325f3e8
+Commit: 88fae6c, 325f3e8, 43c9edf
 Plan tasks: 0.1, 0.2, 0.3, 0.4, 0.5, 0.6
 
 ## Summary
@@ -39,6 +39,13 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
   command-list format at the user's request (2026-09-22)
 - `resources/TUTORIAL.md` — updated the INFRA.md row description; fixed the ADR link, which pointed
   at a nonexistent `docs/adr/` path (2026-09-22)
+- `docker-compose.yml` — added `develop.watch` under `cafefin-api` (`action: rebuild` on
+  `cafefin-api`, `frontend/cafefin-web/src`, `frontend/cafefin-web/index.html`, `pom.xml`,
+  `Dockerfile`; deliberately excludes `cafefin-common`, still source-empty) (2026-09-22)
+- `resources/docs/INFRA.md` — §6 changed from `docker compose up --build` to
+  `docker compose up --watch` (2026-09-22)
+- `.claude/skills/update-docs/SKILL.md` — verification step rewritten to assume `docker compose
+  watch` keeps the stack always fresh: curl the live stack directly, no staleness check (2026-09-22)
 
 ## Decisions
 - Java 25 over 21, PostgreSQL 17 over 16 (both spec-allowed): took the newer of each pair, no
@@ -74,6 +81,12 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
 - (2026-09-22) `env.example` was never actually created — confirmed via `git log --all -- env.example`
   (no trace at any commit), not renamed or deleted as previously suspected. `INFRA.md` now lists the
   five required env vars directly instead of a `cp env.example .env` step.
+- (2026-09-22) `docker compose watch` (native Compose feature, verified via context7) over manual
+  `--build` reruns: eliminates the "code newer than image" staleness case entirely for local dev,
+  since the running container rebuilds+recreates automatically on a matched-path file change (user
+  explicitly asked for zero "code mới hơn image" cases at the developer-only stage this project is
+  at). `cafefin-common` deliberately left out of the watch paths — empty module, watching it would
+  be scaffolding for source that doesn't exist yet.
 
 ## Side Effects
 - `db/init/01-users.sh` only runs on a Postgres container's first volume creation. A grant
@@ -100,6 +113,11 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
 - 2026-09-22 — re-verified every command INFRA.md now documents: `npm run dev` boots Vite on
   `:5173`; `docker compose up --build` then `curl localhost:8080/actuator/health` → `UP` and
   `curl localhost:8080/` → the SPA's `index.html`, both same origin.
+- 2026-09-22 — `docker compose watch`: edited a comment in a watched file, observed automatic
+  rebuild+recreate of `cafefin-api` (~15s) with no manual `--build`; reverted the comment, watched
+  again to confirm the revert also triggered a rebuild. `docker compose down` + restart required
+  after pruning `cafefin-common` from the watch paths — confirmed the watch process does not
+  hot-reload `docker-compose.yml` itself; re-verified healthy via `curl localhost:8080/actuator/health`.
 
 ## Related
 - ADR: `.claude/docs/decisions/1789982869_flyway-separate-connection.md`
@@ -118,3 +136,5 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
 - 2026-09-21 — task 0.6 (Testcontainers scaffold) + `repackage` goal fix (commit 88fae6c)
 - 2026-09-22 — INFRA.md/TUTORIAL.md rewrite (covers 0.5–0.9, fixes broken `env.example` reference
   and wrong ADR link), `PostgreSQLContainer` deprecation fix (commit 325f3e8)
+- 2026-09-22 — `docker compose watch` dev workflow (`develop.watch`, INFRA.md §6, `update-docs`
+  SKILL.md verify-policy rewrite), commit 43c9edf

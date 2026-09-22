@@ -75,4 +75,9 @@ public class RefreshToken {
   public UUID getFamilyId() {
     return familyId;
   }
+
+  /** Task 1.8.3.1: rotation marks the consumed token revoked instead of deleting the row. */
+  public void revoke() {
+    this.revoked = true;
+  }
 }

@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -74,7 +75,7 @@ public class AuthService {
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid credentials"));
 
-    String accessToken = jwtService.issueAccessToken(user);
+    String accessToken = jwtService.issueAccessToken(user.getId());
 
     String rawRefreshToken = generateRawToken();
     RefreshToken refreshToken =
@@ -88,6 +89,53 @@ public class AuthService {
     refreshTokenRepository.save(refreshToken);
 
     return new TokenPairResponse(accessToken, rawRefreshToken);
+  }
+
+  /**
+   * Task 1.8.3.1/1.8.3.3: rotates a valid refresh token — the consumed row is marked revoked
+   * (never deleted, so a later replay has something to find), and a new pair is issued keeping the
+   * same {@code family_id}. Replaying an already-revoked token is the actual breach signal: the
+   * only way a client can present a token that was already consumed is if someone else got a copy
+   * of it after it was rotated away — so every token in that family gets revoked, not just the one
+   * that was replayed. An unknown or expired token gets the same plain {@code 401}; there's no
+   * family to distrust when the token was never valid to begin with.
+   */
+  public TokenPairResponse refresh(RefreshRequest request) {
+    RefreshToken stored =
+        refreshTokenRepository
+            .findByTokenHash(hashToken(request.refreshToken()))
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid refresh token"));
+
+    if (stored.isRevoked()) {
+      revokeFamily(stored.getFamilyId());
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid refresh token");
+    }
+    if (stored.getExpiresAt().isBefore(Instant.now())) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid refresh token");
+    }
+
+    stored.revoke();
+    refreshTokenRepository.save(stored);
+
+    String accessToken = jwtService.issueAccessToken(stored.getUserId());
+
+    String rawRefreshToken = generateRawToken();
+    RefreshToken newRefreshToken =
+        new RefreshToken(
+            stored.getUserId(),
+            hashToken(rawRefreshToken),
+            Instant.now().plus(REFRESH_TOKEN_TTL),
+            stored.getFamilyId());
+    refreshTokenRepository.save(newRefreshToken);
+
+    return new TokenPairResponse(accessToken, rawRefreshToken);
+  }
+
+  private void revokeFamily(UUID familyId) {
+    List<RefreshToken> family = refreshTokenRepository.findByFamilyId(familyId);
+    family.forEach(RefreshToken::revoke);
+    refreshTokenRepository.saveAll(family);
   }
 
   private String generateRawToken() {

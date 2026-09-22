@@ -39,7 +39,12 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             authorize ->
                 authorize
-                    .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login")
+                    // /refresh authenticates via the refresh token in its own
+                    // request body, not a Bearer access token — by the time
+                    // you're calling it, the access token may well already
+                    // be expired, which is the whole point of having one.
+                    .requestMatchers(
+                        "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh")
                     .permitAll()
                     .requestMatchers("/actuator/health")
                     .permitAll()

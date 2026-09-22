@@ -69,6 +69,14 @@ applies to everything in this file too.
   custom JWT filter that sets `SecurityContext` directly, as `cafefin-api`'s does), but it looks
   like a real leaked credential in the logs and is dead weight either way. Fix: exclude it
   explicitly — `@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)`.
+- **Landmine**: Spring Security's default `HttpStatusEntryPoint` calls `response.sendError()`
+  directly, which bypasses Boot's `spring.mvc.problemdetails.enabled` rendering entirely — the
+  security filter chain rejects an unauthenticated request *before* Spring MVC's dispatcher ever
+  runs, so the MVC-level `problemdetails` machinery never gets a chance to run either. A missing/
+  invalid `Authorization` header returns a bare `401` with an empty body, not the RFC 9457 shape
+  every other error in this app uses. Fix: a custom `AuthenticationEntryPoint` that hand-builds a
+  `ProblemDetail` and writes it via the injected Jackson `ObjectMapper`, wired in via
+  `.exceptionHandling(e -> e.authenticationEntryPoint(...))`.
 
 ## Core Entities
 

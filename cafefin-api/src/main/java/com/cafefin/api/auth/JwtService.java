@@ -5,6 +5,7 @@ import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 /**
@@ -25,14 +26,15 @@ public class JwtService {
   }
 
   /**
-   * {@code sub} is the user's id (a UUID), not their email — an email can change, an id can't,
-   * and nothing downstream should have to re-look-up the user just to know which row this token
-   * was issued for.
+   * {@code sub} is the user's id (a UUID), not their email — an email can change, an id can't.
+   * Takes the id directly rather than a {@link User}: task 1.8.3's refresh flow only ever has the
+   * user id (off the refresh token row, not a loaded {@code User}), and loading one just to read
+   * its id back out would be a wasted query.
    */
-  public String issueAccessToken(User user) {
+  public String issueAccessToken(UUID userId) {
     Instant now = Instant.now();
     return Jwts.builder()
-        .subject(user.getId().toString())
+        .subject(userId.toString())
         .issuedAt(Date.from(now))
         .expiration(Date.from(now.plus(ACCESS_TOKEN_TTL)))
         .signWith(keyPair.getPrivate(), Jwts.SIG.RS256)
