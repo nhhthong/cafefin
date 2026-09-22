@@ -1,133 +1,55 @@
 # Domain Context
 
-**No speculation, no hallucination — ask if unsure.** Full rule in `.claude/CLAUDE.md` § Rules;
-applies to everything in this file too.
-
 ## Dev Environment
 
-- OS: Ubuntu 26.04.1 LTS (Resolute), kernel 7.0.0-31-generic, x86_64.
-- Maven: `~/tools/apache-maven-3.9.16` (apt only has 3.9.12), on `PATH` via `~/.bashrc` — export
-  manually if a fresh shell hasn't sourced it (`mvn: command not found`).
-- **Landmine**: `java -version` working doesn't prove a JDK is installed — this machine had only
-  `openjdk-25-jre` (no `javac`), so `mvn compile` failed with the misleading `release version 25
-  not supported`. Fixed via `sudo apt install openjdk-25-jdk`. Check `which javac`, not just
-  `java -version`.
-- Postgres: `docker compose up -d postgres` needs 5 env vars in `.env` (repo root, gitignored):
-  `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD`, `MIGRATION_DB_PASSWORD`, `RUNTIME_DB_PASSWORD`
-  — no `env.example` template exists (confirmed via `git log`, it was never committed; don't assume
-  one and don't recreate it without asking, see `resources/docs/INFRA.md`). This repo's permission
-  settings also block all `.env*` paths, so pass values inline if a tool can't read `.env` itself.
-  Dual `migration`/`runtime` DB users are seeded by `db/init/01-users.sh`, only on first volume
-  creation (`.claude/docs/plans/infra.md` task 0.4).
-- `cafefin-api` needs `RUNTIME_DB_PASSWORD` (and `MIGRATION_DB_PASSWORD` for Flyway) exported
-  before `spring-boot:run` — DB creds come from env only, never hard-coded.
-- `mvn spring-boot:run` fails ("No plugin found for prefix 'spring-boot'") without a registered
-  plugin group — use the full coordinate: `mvn -pl cafefin-api
-  org.springframework.boot:spring-boot-maven-plugin:4.1.1:run`.
-- **Landmine**: Spring Boot 4.x moved Flyway's Spring wiring into its own module
-  (`spring-boot-flyway`, separate from `spring-boot-autoconfigure`). Depending on bare
-  `flyway-core` boots clean with zero errors but Flyway silently never runs. Fix: depend on
-  `spring-boot-starter-flyway` (+ `flyway-database-postgresql`). Suspect this same "starter vs.
-  bare library" split for any other Boot 4.x integration that boots clean but visibly does nothing.
-- **Landmine**: `GRANT ALL PRIVILEGES ON DATABASE x TO role` does not include `CREATE` on the
-  `public` schema (PostgreSQL 15+ no longer grants that by default to non-owners). Missing it
-  makes Flyway's own bootstrap fail with "permission denied for schema public" even though
-  `migration` already has "ALL PRIVILEGES ON DATABASE". Needs a separate `GRANT ALL ON SCHEMA
-  public TO migration` — both grants live in `db/init/01-users.sh`.
-- **Landmine**: Testcontainers 2.x renamed its module artifacts with a `testcontainers-` prefix
-  (`org.testcontainers:testcontainers-postgresql`, `testcontainers-junit-jupiter`) — the bare
-  `postgresql`/`junit-jupiter` artifact ids from Testcontainers 1.x no longer resolve
-  (`'dependencies.dependency.version' ... is missing`, since the BOM only manages the new names).
-  Same rename hit the Java package and the class itself: import
-  `org.testcontainers.postgresql.PostgreSQLContainer`, not the deprecated
-  `org.testcontainers.containers.PostgreSQLContainer` — and the new class isn't generic anymore
-  (`PostgreSQLContainer`, not `PostgreSQLContainer<?>`).
-- **Landmine**: without `spring-boot-starter-parent` as parent (this repo's own root `pom.xml` is
-  the parent instead), `spring-boot-maven-plugin`'s `repackage` goal is not bound to the `package`
-  phase automatically — `mvn package` silently produces a plain, non-executable jar, and `java -jar`
-  fails with `no main manifest attribute`. Fix: an explicit `<executions>` block binding `repackage`
-  to the plugin declaration (`cafefin-api/pom.xml`).
-- **Landmine**: `spring.mvc.problemdetails.enabled` defaults to `false` in Boot 4.1.1 (verified via
-  `spring-boot-webmvc`'s own `spring-configuration-metadata.json`, not assumed) — without it,
-  built-in Spring exceptions (validation failures, `ResponseStatusException`, 404s, ...) render the
-  old-style error body, not RFC 9457. This project's error convention (CLAUDE.md) needs it turned
-  on explicitly in every `application.yml` (main and test).
-- **Landmine**: Boot 4.1.1 ships Jackson 3.x under groupId `tools.jackson.core`, not
-  `com.fasterxml.jackson.core` — `ObjectMapper` is `tools.jackson.databind.ObjectMapper`. The old
-  `com.fasterxml.jackson.databind` package doesn't resolve at all on this classpath.
-- **Landmine**: `@AutoConfigureMockMvc` (and MockMvc test-slice support generally) isn't in
-  `spring-boot-test-autoconfigure` anymore — it moved to its own module, `spring-boot-webmvc-test`
-  (needs adding explicitly, test scope), package
-  `org.springframework.boot.webmvc.test.autoconfigure`. Same split pattern as `spring-boot-webmvc`
-  for the main autoconfig and `spring-boot-flyway` for Flyway — suspect it for any other Boot 4.x
-  test-support class that seems to have vanished.
-- **Landmine**: adding `spring-boot-starter-security` with no `UserDetailsService` bean anywhere
-  makes Boot auto-generate a random in-memory user and log its password at WARN on every startup
-  (`UserDetailsServiceAutoConfiguration`, module `spring-boot-security`, package
-  `org.springframework.boot.security.autoconfigure` in 4.1.1 — not the pre-Boot-4 path). Harmless
-  if the app never uses Spring Security's `UserDetailsService`/`AuthenticationManager` (e.g. a
-  custom JWT filter that sets `SecurityContext` directly, as `cafefin-api`'s does), but it looks
-  like a real leaked credential in the logs and is dead weight either way. Fix: exclude it
-  explicitly — `@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)`.
-- **Landmine**: Spring Security's default `HttpStatusEntryPoint` calls `response.sendError()`
-  directly, which bypasses Boot's `spring.mvc.problemdetails.enabled` rendering entirely — the
-  security filter chain rejects an unauthenticated request *before* Spring MVC's dispatcher ever
-  runs, so the MVC-level `problemdetails` machinery never gets a chance to run either. A missing/
-  invalid `Authorization` header returns a bare `401` with an empty body, not the RFC 9457 shape
-  every other error in this app uses. Fix: a custom `AuthenticationEntryPoint` that hand-builds a
-  `ProblemDetail` and writes it via the injected Jackson `ObjectMapper`, wired in via
-  `.exceptionHandling(e -> e.authenticationEntryPoint(...))`.
+Ubuntu 26.04, x86_64. Stack landmines (Boot 4.x module splits, Jackson 3.x, Testcontainers 2.x,
+Postgres grants, RFC 9457 switches) live in `.claude/rules/java-stack.md` — auto-loaded when you
+touch a `.java`/`pom.xml`/`.yml`/`.sql` file. Read it before debugging a "boots clean, does
+nothing" problem.
+
+- Maven at `~/tools/apache-maven-3.9.16` (apt only ships 3.9.12), on `PATH` via `~/.bashrc` —
+  export manually if a fresh shell hasn't sourced it (`mvn: command not found`).
+- `java -version` working does not prove a JDK is installed — check `which javac`. A JRE-only box
+  fails `mvn compile` with the misleading `release version 25 not supported`.
+- Secrets: `.env` at repo root (gitignored, no template ever committed — don't recreate one without
+  asking) holds `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD`, `MIGRATION_DB_PASSWORD`,
+  `RUNTIME_DB_PASSWORD`. Permission settings block all `.env*` paths, so pass values inline.
+- `docker compose up -d postgres`. The dual `migration`/`runtime` DB users are seeded by
+  `db/init/01-users.sh`, only on first volume creation.
+- Run the API: export `RUNTIME_DB_PASSWORD` and `MIGRATION_DB_PASSWORD`, then `mvn -pl cafefin-api
+  org.springframework.boot:spring-boot-maven-plugin:4.1.1:run` — the short `spring-boot:run` prefix
+  isn't registered. DB creds come from env only, never hard-coded.
 
 ## Core Entities
 
-- `Account` (`id userId currency accountType[USER/SYSTEM]`) — **no `balance` column**, always
-  derived from `LedgerEntry`. `NAPAS_CLEARING`/`NAPAS_SETTLEMENT` are seeded SYSTEM accounts; users
-  never select/write one directly.
-- `LedgerEntry` (`id accountId transactionId type[DEBIT/CREDIT] amount entrySequence
-  balanceAfter`) — immutable, append-only. `entrySequence` (not `id`, not timestamp) is the only
-  valid "latest entry" ordering.
+- `Account` (`id userId currency accountType[USER/SYSTEM]`) — **no `balance` column**.
+  `NAPAS_CLEARING`/`NAPAS_SETTLEMENT` are seeded SYSTEM accounts; users never select or write one.
+- `LedgerEntry` (`id accountId transactionId type[DEBIT/CREDIT] amount entrySequence balanceAfter`)
+  — immutable, append-only. `entrySequence` is the only valid "latest entry" ordering.
 - `NapasTransaction` (`id direction status[PENDING/COMPLETED/FAILED/IN_DOUBT] amount accountId
-  napasRefId`) — the external gateway leg, separate from the internal `Transaction`/`LedgerEntry`
-  pair it corresponds to.
+  napasRefId`) — the external gateway leg. One internal transfer to NAPAS produces both this and an
+  internal `Transaction`/`LedgerEntry` pair; never conflate their ids or state machines.
 - `IdempotencyKey` (`userId key requestFingerprint state[IN_FLIGHT/COMPLETED] responseBody
   responseStatus`) — scoped per user, guards duplicate transfer submission.
-- KYC profile — status `PENDING/IN_REVIEW/VERIFIED/REJECTED/EXPIRED/REQUIRES_UPDATE`, separate
-  from AML alerts/cases (compliance records layered around ledger events, never mutating it).
+- KYC profile — status `PENDING/IN_REVIEW/VERIFIED/REJECTED/EXPIRED/REQUIRES_UPDATE`, separate from
+  AML alerts/cases (compliance layers around ledger events, never mutates them).
 
-## Terms that mean two different things
-
-- **Transaction**: the internal double-entry `Transaction`/`LedgerEntry` pair (ledger domain) vs.
-  `NapasTransaction` (the external gateway's record of one outbound/inbound call). A single
-  internal transfer to NAPAS produces both — don't conflate their IDs or state machines.
-  `NapasTransaction.status` is gateway-facing (`PENDING/COMPLETED/FAILED/IN_DOUBT`); the internal
-  ledger only ever records committed, balanced entries.
-- **Balance**: the *authoritative* balance (`SUM(CREDIT)-SUM(DEBIT)` over `LedgerEntry`, Task 1.2)
-  vs. the *optimized* `balanceAfter` denormalized column (Task 1.2b) — the latter is a cached
-  read-path optimization of the former, must always match it exactly, and is never itself the
-  source of truth.
-- **Failure vs. IN_DOUBT**: a NAPAS gateway timeout/no-response is explicitly *not* a failure.
-  `FAILED` = deterministic 4xx/5xx, refunded via compensating transaction. `IN_DOUBT` = timeout,
-  funds held in `NAPAS_CLEARING`, resolved only by polling/reconciliation — never auto-refunded.
+"Balance" means two things: the authoritative `SUM(CREDIT)-SUM(DEBIT)` over `LedgerEntry`, and the
+denormalized `balanceAfter` column — a read-path cache that must match it exactly and is never
+itself the source of truth.
 
 ## Key Flows
 
-- Internal transfer: debit source / credit dest via `LedgerEntry`, pessimistic row lock on both
-  `Account` rows (sorted by `accountId` ascending), idempotency-key guarded.
-- Outbound payment (CafeFin → NAPAS): two-phase — Phase 1 debit user/credit `NAPAS_CLEARING`
-  (PENDING); Phase 2 on gateway response, clear into `NAPAS_SETTLEMENT` (COMPLETED) or compensate
-  back to user (FAILED) or hold as `IN_DOUBT` on timeout.
-- Inbound payment (NAPAS → CafeFin): webhook into `cafefin-api`, signature-verified, idempotent on
-  duplicate callback/replay.
-- Reconciliation job: periodic internal ledger-sum invariant check (Task 1.7) plus external
-  reconciliation against NAPAS mock state (Task 2.4) to resolve `IN_DOUBT` transactions.
-- KYC gate: restricted financial capabilities blocked until required KYC state reached.
-- AML monitoring: deterministic rule evaluation (velocity, unusual patterns, thresholds) on
-  transactions → alert → case → investigator disposition, fully audited.
-- Regulatory reporting: deterministic, versioned snapshot generation from ledger+account+KYC+AML
-  data with lineage back to source records; re-running the same period/snapshot must reproduce the
-  same output.
-
-## Source of truth
-
-(empty — nothing generated yet; `/clio:plan infra` will name generated paths, e.g. the OpenAPI
-client, once the build is scaffolded)
+- Internal transfer: debit source / credit dest, pessimistic lock on both `Account` rows (ascending
+  `accountId`), idempotency-key guarded.
+- Outbound payment (CafeFin → NAPAS), two-phase: Phase 1 debit user / credit `NAPAS_CLEARING`
+  (PENDING); Phase 2 on gateway response, clear into `NAPAS_SETTLEMENT` (COMPLETED), compensate
+  back to the user (FAILED), or hold `IN_DOUBT` (timeout).
+- Inbound payment: NAPAS webhook into `cafefin-api`, signature-verified, idempotent on replay.
+- Reconciliation: periodic internal ledger-sum invariant check, plus external reconciliation
+  against NAPAS mock state to resolve `IN_DOUBT`.
+- KYC gate: restricted financial capabilities blocked until the required KYC state is reached.
+- AML: deterministic rules (velocity, unusual patterns, thresholds) on transactions → alert → case
+  → investigator disposition, fully audited.
+- Regulatory reporting: deterministic versioned snapshots from ledger + account + KYC + AML data,
+  with lineage back to source records; re-running a period reproduces the same output.

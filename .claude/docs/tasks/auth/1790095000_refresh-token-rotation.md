@@ -1,7 +1,7 @@
 # Refresh Token Rotation + Breach Detection
 Date: 2026-09-22
 Updated: 2026-09-22
-Commit: not committed
+Commit: 12912df
 Plan tasks: 1.8.3.1, 1.8.3.2, 1.8.3.3
 
 ## Summary
@@ -70,3 +70,4 @@ one replayed.
 
 ## Change Log
 - 2026-09-22 — initial
+- 2026-09-22 — committed as part of "[feature] login - v2" (commit 12912df); no code change
