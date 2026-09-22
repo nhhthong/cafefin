@@ -63,6 +63,17 @@
       <scope>runtime</scope>
     </dependency>
 
+    <!-- BCryptPasswordEncoder only (memory/auth.md: passwords hashed with
+         BCrypt). Deliberately just spring-security-crypto, not the full
+         spring-boot-starter-security — that starter auto-secures every
+         endpoint by default, which would need a SecurityConfig before
+         /api/v1/auth/register itself could even be reached. The full
+         starter + JWT filter chain arrives with task 1.1.8. -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
+    </dependency>
+
     <!-- Flyway: runs the versioned SQL files under
          src/main/resources/db/migration on every app startup, tracking
          which ones already ran in the flyway_schema_history table. This is
@@ -95,6 +106,14 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- @AutoConfigureMockMvc / MockMvc test-slice support. Boot 4.x split
+         this out of spring-boot-test-autoconfigure into its own module,
+         same pattern as spring-boot-webmvc for the main autoconfig. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-webmvc-test</artifactId>
       <scope>test</scope>
     </dependency>
 

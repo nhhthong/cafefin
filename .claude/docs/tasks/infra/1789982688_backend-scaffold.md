@@ -1,7 +1,7 @@
 # Backend Scaffold
 Date: 2026-09-21
-Updated: 2026-09-21
-Commit: not committed, 88fae6c
+Updated: 2026-09-22
+Commit: 88fae6c, 325f3e8
 Plan tasks: 0.1, 0.2, 0.3, 0.4, 0.5, 0.6
 
 ## Summary
@@ -32,6 +32,13 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
 - `cafefin-api/src/test/resources/application.yml` — new, test-only config; leaves datasource/flyway
   URLs unset so `@ServiceConnection` wires them from the container, no `MIGRATION_DB_PASSWORD` /
   `RUNTIME_DB_PASSWORD` env vars needed for tests (2026-09-21)
+- `cafefin-api/src/test/java/com/cafefin/api/CafefinApiApplicationTests.java` — switched to
+  `org.testcontainers.postgresql.PostgreSQLContainer` (2026-09-22, see Decisions)
+- `resources/docs/INFRA.md` — rewritten to also cover tasks 0.5–0.9 (backend tests, frontend,
+  same-origin Docker deploy), previously only documented up to 0.4; then condensed to a short
+  command-list format at the user's request (2026-09-22)
+- `resources/TUTORIAL.md` — updated the INFRA.md row description; fixed the ADR link, which pointed
+  at a nonexistent `docs/adr/` path (2026-09-22)
 
 ## Decisions
 - Java 25 over 21, PostgreSQL 17 over 16 (both spec-allowed): took the newer of each pair, no
@@ -61,6 +68,12 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
   automatically. Missing this produced a plain jar; `java -jar` failed with `no main manifest
   attribute` (found while building the Docker runtime image, task 0.9 — see
   `.claude/docs/tasks/frontend/`).
+- (2026-09-22) Testcontainers 2.x also deprecated the old `org.testcontainers.containers.
+  PostgreSQLContainer` class in favor of `org.testcontainers.postgresql.PostgreSQLContainer` — the
+  new class additionally isn't generic anymore (`PostgreSQLContainer`, not `PostgreSQLContainer<?>`).
+- (2026-09-22) `env.example` was never actually created — confirmed via `git log --all -- env.example`
+  (no trace at any commit), not renamed or deleted as previously suspected. `INFRA.md` now lists the
+  five required env vars directly instead of a `cp env.example .env` step.
 
 ## Side Effects
 - `db/init/01-users.sh` only runs on a Postgres container's first volume creation. A grant
@@ -84,6 +97,9 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
   (task 0.5).
 - 2026-09-21 — `mvn -pl cafefin-api test`: Testcontainers boots `postgres:17.11`, Flyway applies
   `V1__init.sql` against it, Spring context loads; `BUILD SUCCESS`, 1 test passed (task 0.6).
+- 2026-09-22 — re-verified every command INFRA.md now documents: `npm run dev` boots Vite on
+  `:5173`; `docker compose up --build` then `curl localhost:8080/actuator/health` → `UP` and
+  `curl localhost:8080/` → the SPA's `index.html`, both same origin.
 
 ## Related
 - ADR: `.claude/docs/decisions/1789982869_flyway-separate-connection.md`
@@ -93,17 +109,12 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
   `ALL PRIVILEGES` does not include schema-level `CREATE` since PostgreSQL 15) — fixed in the
   script, and applied by hand to the already-running container since the script only runs on first
   volume creation.
-- `env.example` (the committed, no-leading-dot template — named that way because this repo's
-  permission settings block any `.env*` path from being read/edited by the agent) no longer exists
-  on disk; only `.env` does. If it was renamed/moved rather than copied, the documented
-  `cp env.example .env` flow in `resources/docs/INFRA.md` is currently broken — worth confirming.
 - `.env` is staged for commit with real local dev passwords inside it, and `.gitignore`'s `.env`
   line is commented out by explicit user choice (asked directly, user chose to keep it that way).
   Flagging again since it is now actually staged, not just a hypothetical.
-- Task 0.6 (Testcontainers) done 2026-09-21. Frontend scaffold + same-origin serving (plan tasks
-  0.7–0.9) split into a separate `frontend` feature doc — different domain, different req row (0.8
-  vs 0.1–0.5): see `.claude/docs/tasks/frontend/1789985162_frontend-scaffold.md`.
 
 ## Change Log
 - 2026-09-21 — initial
 - 2026-09-21 — task 0.6 (Testcontainers scaffold) + `repackage` goal fix (commit 88fae6c)
+- 2026-09-22 — INFRA.md/TUTORIAL.md rewrite (covers 0.5–0.9, fixes broken `env.example` reference
+  and wrong ADR link), `PostgreSQLContainer` deprecation fix (commit 325f3e8)

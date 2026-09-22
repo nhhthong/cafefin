@@ -13,6 +13,11 @@
 spring:
   application:
     name: cafefin-api
+  mvc:
+    problemdetails:
+      # Kept in sync with the main application.yml — off by default in Boot
+      # 4.1.1, and integration tests assert RFC 9457 error bodies.
+      enabled: true
   jpa:
     hibernate:
       ddl-auto: none

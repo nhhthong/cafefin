@@ -97,6 +97,16 @@ This brings up PostgreSQL, the backend, and the React SPA behind one origin
 (`http://localhost:8080`). Demo accounts arrive already funded through real double-entry ledger
 transactions, so there's no manual SQL to run.
 
+## REST API Summary
+
+Endpoints use JSON. Only what's actually built ships here — see
+[`.claude/docs/plans/`](.claude/docs/plans/) for what's planned but not yet implemented.
+
+### Auth Endpoints
+| Method | Path | Auth | Description | Flow Guide |
+|---|---|:---:|---|:---:|
+| `POST` | `/api/v1/auth/register` | No | Register a new user (`email`, `password`) | [View Flow](resources/docs/REGISTER.md) |
+
 ## Documentation
 
 - [`.claude/docs/specs/cafefin_roadmap_v4.md`](.claude/docs/specs/cafefin_roadmap_v4.md): the

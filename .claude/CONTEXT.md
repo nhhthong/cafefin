@@ -12,10 +12,13 @@ applies to everything in this file too.
   `openjdk-25-jre` (no `javac`), so `mvn compile` failed with the misleading `release version 25
   not supported`. Fixed via `sudo apt install openjdk-25-jdk`. Check `which javac`, not just
   `java -version`.
-- Postgres: `docker compose --env-file env.example up -d postgres` — no real `.env` file exists
-  (this repo's permission settings block all `.env*` paths); the committed template is
-  `env.example` (no leading dot, no `.txt`). Dual `migration`/`runtime` DB users are seeded by
-  `db/init/01-users.sh`, only on first volume creation (`.claude/docs/plans/infra.md` task 0.4).
+- Postgres: `docker compose up -d postgres` needs 5 env vars in `.env` (repo root, gitignored):
+  `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD`, `MIGRATION_DB_PASSWORD`, `RUNTIME_DB_PASSWORD`
+  — no `env.example` template exists (confirmed via `git log`, it was never committed; don't assume
+  one and don't recreate it without asking, see `resources/docs/INFRA.md`). This repo's permission
+  settings also block all `.env*` paths, so pass values inline if a tool can't read `.env` itself.
+  Dual `migration`/`runtime` DB users are seeded by `db/init/01-users.sh`, only on first volume
+  creation (`.claude/docs/plans/infra.md` task 0.4).
 - `cafefin-api` needs `RUNTIME_DB_PASSWORD` (and `MIGRATION_DB_PASSWORD` for Flyway) exported
   before `spring-boot:run` — DB creds come from env only, never hard-coded.
 - `mvn spring-boot:run` fails ("No plugin found for prefix 'spring-boot'") without a registered
@@ -35,11 +38,29 @@ applies to everything in this file too.
   (`org.testcontainers:testcontainers-postgresql`, `testcontainers-junit-jupiter`) — the bare
   `postgresql`/`junit-jupiter` artifact ids from Testcontainers 1.x no longer resolve
   (`'dependencies.dependency.version' ... is missing`, since the BOM only manages the new names).
+  Same rename hit the Java package and the class itself: import
+  `org.testcontainers.postgresql.PostgreSQLContainer`, not the deprecated
+  `org.testcontainers.containers.PostgreSQLContainer` — and the new class isn't generic anymore
+  (`PostgreSQLContainer`, not `PostgreSQLContainer<?>`).
 - **Landmine**: without `spring-boot-starter-parent` as parent (this repo's own root `pom.xml` is
   the parent instead), `spring-boot-maven-plugin`'s `repackage` goal is not bound to the `package`
   phase automatically — `mvn package` silently produces a plain, non-executable jar, and `java -jar`
   fails with `no main manifest attribute`. Fix: an explicit `<executions>` block binding `repackage`
   to the plugin declaration (`cafefin-api/pom.xml`).
+- **Landmine**: `spring.mvc.problemdetails.enabled` defaults to `false` in Boot 4.1.1 (verified via
+  `spring-boot-webmvc`'s own `spring-configuration-metadata.json`, not assumed) — without it,
+  built-in Spring exceptions (validation failures, `ResponseStatusException`, 404s, ...) render the
+  old-style error body, not RFC 9457. This project's error convention (CLAUDE.md) needs it turned
+  on explicitly in every `application.yml` (main and test).
+- **Landmine**: Boot 4.1.1 ships Jackson 3.x under groupId `tools.jackson.core`, not
+  `com.fasterxml.jackson.core` — `ObjectMapper` is `tools.jackson.databind.ObjectMapper`. The old
+  `com.fasterxml.jackson.databind` package doesn't resolve at all on this classpath.
+- **Landmine**: `@AutoConfigureMockMvc` (and MockMvc test-slice support generally) isn't in
+  `spring-boot-test-autoconfigure` anymore — it moved to its own module, `spring-boot-webmvc-test`
+  (needs adding explicitly, test scope), package
+  `org.springframework.boot.webmvc.test.autoconfigure`. Same split pattern as `spring-boot-webmvc`
+  for the main autoconfig and `spring-boot-flyway` for Flyway — suspect it for any other Boot 4.x
+  test-support class that seems to have vanished.
 
 ## Core Entities
 

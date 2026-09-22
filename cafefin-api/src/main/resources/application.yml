@@ -5,6 +5,15 @@ spring:
   application:
     name: cafefin-api
 
+  mvc:
+    problemdetails:
+      # Off by default in Boot 4.1.1 (spring-boot-webmvc module) — without
+      # this, Spring's built-in exceptions (validation failures, 404s, ...)
+      # render as the old-style error body, not RFC 9457. This project's
+      # error convention (CLAUDE.md) is ProblemDetail everywhere, no custom
+      # wrapper, so it must be turned on explicitly.
+      enabled: true
+
   datasource:
     # Connects as the "runtime" role (db/init/01-users.sh), which can only
     # read/write rows, never change the schema — Flyway (Task 0.5) is the

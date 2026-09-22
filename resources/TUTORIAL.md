@@ -8,7 +8,8 @@ own guide, instead of dumping everything into one file.
 
 | Topic | Read |
 |---|---|
-| Infra: prerequisites, running the DB and backend, Flyway migrations, known pitfalls | [`docs/INFRA.md`](docs/INFRA.md) |
+| Infra: prerequisites, env vars, DB, running/testing the backend, frontend, same-origin Docker deployment, known pitfalls | [`docs/INFRA.md`](docs/INFRA.md) |
+| Auth flow: `POST /api/v1/auth/register` — contract, sequence diagram, error bodies | [`docs/REGISTER.md`](docs/REGISTER.md) |
 
 ## Project memory (spec, plan, and decision history)
 
@@ -21,7 +22,7 @@ doesn't explain *why*, not just *how*:
 | Has requirement X been decided yet? | [`.claude/docs/specs/requirements.md`](../.claude/docs/specs/requirements.md) |
 | What's the distilled spec for area X? | [`.claude/docs/specs/memory/`](../.claude/docs/specs/memory/) (one file per domain) |
 | What's the task-by-task plan for area X, and what's already been verified? | [`.claude/docs/plans/`](../.claude/docs/plans/) |
-| Why was decision X made a particular way? | `docs/adr/` (created once the first ADR-worthy decision lands) |
+| Why was decision X made a particular way? | [`.claude/docs/decisions/`](../.claude/docs/decisions/) (one file per ADR) |
 
 ## Source layout
 
