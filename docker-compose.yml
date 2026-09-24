@@ -57,6 +57,17 @@ services:
     # stale. `action: rebuild` re-runs the same Dockerfile `--build` would,
     # just triggered by the file save instead of a command you have to
     # remember to type.
+    #
+    # NOT the fast inner dev loop: this rebuild goes through the frontend
+    # (npm ci/build) and backend Maven stages every time, ~5-6 minutes even
+    # with warm caches, because the multi-stage Dockerfile is optimized for
+    # one production-like image, not quick edit/verify cycles. For day-to-day
+    # Java changes, run the app directly on the host instead (CONTEXT.md):
+    # `mvn -pl cafefin-api org.springframework.boot:spring-boot-maven-plugin:4.1.1:run`
+    # against `docker compose up -d postgres` — same .m2 cache, restarts in
+    # seconds, no image build. Reach for `watch`/`--build` only to verify the
+    # containerized, same-origin build itself (what Task 0.9 checks), not
+    # while iterating on a single endpoint.
     develop:
       watch:
         - action: rebuild

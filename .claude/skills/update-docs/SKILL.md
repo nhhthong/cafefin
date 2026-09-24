@@ -31,22 +31,26 @@ better, as a comment in the source file it explains — instead of pointing at i
 months from now, or a contributor who never had `.claude/` at all, has to get the full picture from
 the public doc and the code alone.
 
-## Verify against the running stack — never guess
+## Verify from the session's own evidence — never guess
 
-CLAUDE.md's rule: anything a tool can check gets checked before it's stated. The dev stack
-(`postgres` + `cafefin-api`) runs via `docker compose up --watch` for the whole implementation
-session — `develop.watch` in `docker-compose.yml` rebuilds and recreates `cafefin-api`
-automatically on every source change, so the running container always matches the code on disk.
-Verification is a `curl` against it, not a reconstruction of what Spring *usually* does — this repo
-has already hit enough Boot-4.x surprises (`.claude/CONTEXT.md`'s Landmine entries) that "usually"
-isn't reliable here. `docker compose ps` confirms the stack is up if in doubt; it's not something
-you start or rebuild by hand.
+CLAUDE.md's rule: anything a tool can check gets checked before it's stated. This skill does not
+spin up or curl the running stack itself — that's redundant with the implementation work that
+already happened this session (an integration test run, MockMvc/curl output already captured,
+etc.). Rebuilding `cafefin-api` in Docker just to re-derive something already proven is wasted time
+in a dev environment where nothing runs in a container by default (no `docker compose up --watch`
+process is assumed to be live — check `docker compose ps` if unsure, don't start or rebuild it
+yourself).
 
 1. **Read the real code** — controller path and `@RequestBody` type, the service's exception
    paths, the response DTO's exact fields.
-2. **Curl it for real** — the happy path and every failure the code handles (validation error,
-   conflict, malformed body, wrong `Content-Type`). Paste the actual status line and JSON body,
-   never a paraphrase.
+2. **Pull real evidence from this session** — a passing integration test's actual assertions
+   (status code, header, body shape), a `curl`/MockMvc result already captured earlier in the
+   conversation, or a task doc's `## Testing Done` entry. Use the real values those runs produced,
+   never a paraphrase or a "Spring usually returns" reconstruction — this repo has already hit
+   enough Boot-4.x surprises (`.claude/CONTEXT.md`'s Landmine entries) that "usually" isn't
+   reliable here. Nothing in this session actually exercised the behavior you're about to
+   document → say so and run the narrowest real check that produces evidence (a test, or one
+   `curl` against the stack if it's already up) rather than inventing a plausible-looking body.
 3. **Not built yet** (a planned rate limit, an error case with no handler)? Say so in plain prose —
    "no rate limit yet" — never describe the eventual behavior, and never cite *where* it's planned
    (that's a `.claude/` path — see above).
@@ -70,9 +74,9 @@ A few things that make these docs worth reading rather than restating the code i
   reasoning from there. If a real reason exists but nobody wrote it down anywhere reachable from the
   public repo, that's worth fixing at the source (add the comment) rather than working around by
   guessing at a reason that merely sounds plausible.
-- **The Errors table lists only what's actually implemented.** Every row should be something you
-  personally triggered against the running stack. No row for a status code the framework *might*
-  return in some configuration you haven't checked.
+- **The Errors table lists only what's actually implemented.** Every row should trace back to a
+  real test assertion or captured `curl`/MockMvc response, not something you're inferring the
+  framework *might* do in some configuration you haven't checked.
 - **Filename** matches the existing convention — `REGISTER.md`, `INFRA.md` (SCREAMING_SNAKE /
   PascalCase), not `register.md` or `register-flow.md`.
 
@@ -131,15 +135,15 @@ non-obvious reason (a plain getter, a straightforward field mapping) doesn't nee
 ## Non-flow guides (INFRA.md-style)
 
 Setup/operational guides aren't one-per-endpoint and have no fixed section template, but the same
-verify-against-the-running-stack rule applies at the command level: every command shown should have
-actually been run, against the current code, before it's written down. Setup changed since a
-command was last verified — a new env var, a renamed script, a moved file — re-run it rather than
-trusting the old doc or memory.
+verify-from-evidence rule applies at the command level: every command shown should trace back to
+this session actually running it (or a prior session's recorded output), against the current code.
+Setup changed since a command was last verified — a new env var, a renamed script, a moved file —
+re-run it rather than trusting the old doc or memory.
 
 ## Before calling it done
 
-Re-read the finished doc once against the actual `curl` output and the real code — a wrong field
-name or status code misleads the next reader worse than no doc at all. If this repo's `.claude/clio/`
-workflow is in use, doc changes are "files changed" like any other source change and belong in
-whatever `/clio:memo` run covers this piece of work — mention them when that runs, but don't invoke
-`/clio:memo` yourself unless asked.
+Re-read the finished doc once against the session's real evidence (test output, captured responses)
+and the real code — a wrong field name or status code misleads the next reader worse than no doc at
+all. If this repo's `.claude/clio/` workflow is in use, doc changes are "files changed" like any
+other source change and belong in whatever `/clio:memo` run covers this piece of work — mention
+them when that runs, but don't invoke `/clio:memo` yourself unless asked.
