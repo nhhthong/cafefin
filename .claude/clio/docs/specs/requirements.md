@@ -1,10 +1,15 @@
 # Requirements — row → spec file index
+Last ingest: 2026-09-24 fa1894f
+
+Domains — the only values allowed in the `domain` field of both ledgers, by business area served,
+never by directory: `auth` `account` `ledger` `napas` `notification` `compliance` `backoffice`
+`reliability` `frontend` `infra` `all`
 
 Distilled requirement specs, final decisions only. **Starting a task whose context is ambiguous:
 find the matching row below, read the mapped file(s) under `memory/`. No row, or a row marked
 ⚠️/❌: ask the user before implementing.**
 
-Raw source lives at `.claude/docs/specs/cafefin_roadmap_v4.md` (committed). Each `memory/*.md`
+Raw source lives at `.claude/clio/docs/specs/cafefin_roadmap_v4.md` (committed). Each `memory/*.md`
 quotes its source verbatim in `## Source`. Row numbers below are the roadmap's own Task numbers
 (`0.1`, `1.2b`, `8.3`…) except rows prefixed `FE.` and `DoD.`, which are local sequential numbers
 for un-numbered cross-cutting sections of the source.
@@ -16,12 +21,13 @@ for un-numbered cross-cutting sections of the source.
 Once decided, delete the losing version (git history keeps it).
 
 **The status column answers only "has this been decided?", never "is it built?"** — build state is
-`.claude/clio/index.jsonl`, open items `.claude/clio/debt.jsonl`, both joined on `req` = row `#`.
+`.claude/clio/database/index.jsonl`, open items `.claude/clio/database/debt.jsonl`, both joined on `req` = row `#`.
 
 ## By requirement number
 
 | # | Task | Spec file(s) | Decision status (NOT build status) |
 |---|------|--------------|-------------|
+| 0 | Stack and scaffold | [memory/infra.md](memory/infra.md) | ✅ |
 | 0.1 | Core tools & runtimes (JDK, Maven, Docker, Node) | [memory/infra.md](memory/infra.md) | ✅ |
 | 0.2 | Repository init, CI pipeline, branch protection | [memory/infra.md](memory/infra.md) | ✅ |
 | 0.3 | Local persistence & Flyway migration infra | [memory/infra.md](memory/infra.md) | ✅ |

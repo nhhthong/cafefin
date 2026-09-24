@@ -135,15 +135,15 @@ other endpoint (rejects missing tokens, accepts valid ones, tolerates a 60s cloc
   `jsonPath("$.instance")` assertions locking the RFC 9457 shape.
 
 ## Related
-- `.claude/docs/tasks/auth/1790047106_register-endpoint.md` — the register endpoint this login flow
+- `.claude/clio/docs/tasks/auth/1790047106_register-endpoint.md` — the register endpoint this login flow
   sits beside; shares `AuthService`, `User`, `CryptoConfig`.
-- ADR: `.claude/docs/decisions/1790047329_uuid-primary-keys.md` — `RefreshToken.id` follows the
+- ADR: `.claude/clio/docs/decisions/1790047329_uuid-primary-keys.md` — `RefreshToken.id` follows the
   same UUID convention.
-- ADR: `.claude/docs/decisions/1790059362_jwt-signing-and-token-lifetimes.md` — RS256, access-TTL,
+- ADR: `.claude/clio/docs/decisions/1790059362_jwt-signing-and-token-lifetimes.md` — RS256, access-TTL,
   refresh-TTL, clock-skew decisions (written this run, see WRAP-UP).
 
 ## Follow-up
-- `.claude/docs/plans/auth.md` still has 1.8.3.1-3 (refresh rotation + breach detection) and
+- `.claude/clio/docs/plans/auth.md` still has 1.8.3.1-3 (refresh rotation + breach detection) and
   1.8.4.1-2 (rate limiting) open.
 - Bucket4j's single-instance limitation still needs documenting in an ADR when 1.8.4.1 lands, per
   the roadmap's explicit call-out (noted in `auth.md`).

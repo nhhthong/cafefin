@@ -1,5 +1,5 @@
 # Auth
-Domain: auth · Plan: `.claude/docs/plans/auth.md` · Spec: `memory/auth.md`
+Domain: auth · Plan: `.claude/clio/docs/plans/auth.md` · Spec: `memory/auth.md`
 
 ## What this is
 Identity/authentication: registration, login, JWT access tokens, refresh-token rotation with

@@ -12,6 +12,23 @@ paths:
 Verified on this repo's stack (Boot 4.1.1, Java 25, Testcontainers 2.x, PostgreSQL 17). Each one
 boots or builds "clean" while silently doing the wrong thing — check here before debugging.
 
+## Build, run, test
+
+Ubuntu 26.04, x86_64.
+
+- Maven at `~/tools/apache-maven-3.9.16` (apt only ships 3.9.12), on `PATH` via `~/.bashrc` —
+  export manually if a fresh shell hasn't sourced it (`mvn: command not found`).
+- `java -version` working does not prove a JDK is installed — check `which javac`. A JRE-only box
+  fails `mvn compile` with the misleading `release version 25 not supported`.
+- Secrets: `.env` at repo root (gitignored, no template ever committed — don't recreate one without
+  asking) holds `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD`, `MIGRATION_DB_PASSWORD`,
+  `RUNTIME_DB_PASSWORD`. Permission settings block all `.env*` paths, so pass values inline.
+- `docker compose up -d postgres`. The dual `migration`/`runtime` DB users are seeded by
+  `db/init/01-users.sh`, only on first volume creation.
+- Run the API: export `RUNTIME_DB_PASSWORD` and `MIGRATION_DB_PASSWORD`, then `mvn -pl cafefin-api
+  org.springframework.boot:spring-boot-maven-plugin:4.1.1:run` — the short `spring-boot:run` prefix
+  isn't registered. DB creds come from env only, never hard-coded.
+
 ## Boot 4.x split its autoconfig into per-integration modules
 
 Depending on the bare library compiles and starts with zero errors, but the Spring wiring never

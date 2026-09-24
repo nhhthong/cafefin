@@ -50,7 +50,7 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
 ## Decisions
 - Java 25 over 21, PostgreSQL 17 over 16 (both spec-allowed): took the newer of each pair, no
   spec reason to prefer the older one. Node 24 over the spec's literal "22+" floor: 22 is now
-  Maintenance LTS, 24 is Active LTS. Full rationale + sources: `.claude/docs/plans/infra.md`.
+  Maintenance LTS, 24 is Active LTS. Full rationale + sources: `.claude/clio/docs/plans/infra.md`.
 - Flyway gets its own JDBC connection (`spring.flyway.url/user/password`), deliberately separate
   from the JPA/Hikari datasource — this is what makes the migration/runtime user split in
   `01-users.sh` actually enforce anything; without it Flyway would inherit the runtime user and
@@ -74,7 +74,7 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
   `package` phase — without `spring-boot-starter-parent` as parent, Maven does not bind it
   automatically. Missing this produced a plain jar; `java -jar` failed with `no main manifest
   attribute` (found while building the Docker runtime image, task 0.9 — see
-  `.claude/docs/tasks/frontend/`).
+  `.claude/clio/docs/tasks/frontend/`).
 - (2026-09-22) Testcontainers 2.x also deprecated the old `org.testcontainers.containers.
   PostgreSQLContainer` class in favor of `org.testcontainers.postgresql.PostgreSQLContainer` — the
   new class additionally isn't generic anymore (`PostgreSQLContainer`, not `PostgreSQLContainer<?>`).
@@ -120,7 +120,7 @@ Postgres with dual DDL/DML database users, and a working Flyway baseline migrati
   hot-reload `docker-compose.yml` itself; re-verified healthy via `curl localhost:8080/actuator/health`.
 
 ## Related
-- ADR: `.claude/docs/decisions/1789982869_flyway-separate-connection.md`
+- ADR: `.claude/clio/docs/decisions/1789982869_flyway-separate-connection.md`
 
 ## Follow-up
 - `db/init/01-users.sh` originally missed `GRANT ALL ON SCHEMA public TO migration` (database-level

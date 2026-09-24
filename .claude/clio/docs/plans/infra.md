@@ -37,4 +37,4 @@ in Task 3.1, Layer 3); pin it when `/clio:plan notification` runs.
 | 0.9 | Vite dev proxy `/api` → `cafefin-api`; production build copies `dist/` into `cafefin-api/src/main/resources/static/` | 0 | `docker compose up --build` serves both the SPA and `/api/v1/**` from `localhost:8080` (same origin) | 0.3, 0.7 | [x] 2026-09-21 |
 
 Queue: empty — all Task 0 rows (0.1–0.9) done. Next: `/clio:plan` an area from
-`.claude/docs/specs/requirements.md` (e.g. `auth`/`ledger`) to start Layer 1.
+`.claude/clio/docs/specs/requirements.md` (e.g. `auth`/`ledger`) to start Layer 1.

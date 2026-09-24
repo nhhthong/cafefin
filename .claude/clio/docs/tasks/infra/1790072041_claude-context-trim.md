@@ -41,7 +41,7 @@ Java/pom/yml/sql file is touched.
   and `/context` to confirm. Filed as debt.
 
 ## Related
-- `.claude/docs/tasks/infra/1789982688_backend-scaffold.md` — the source of most of the extracted
+- `.claude/clio/docs/tasks/infra/1789982688_backend-scaffold.md` — the source of most of the extracted
   Boot 4.x landmines
 
 ## Follow-up

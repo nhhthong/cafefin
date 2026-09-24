@@ -31,7 +31,7 @@ Scaffolded the React/Vite/TS SPA, added Vitest as its test runner, and wired sam
   (task 0.9)
 
 ## Decisions
-- Pinned React to the exact `19.3.0` from `.claude/docs/plans/infra.md`'s version table rather than
+- Pinned React to the exact `19.3.0` from `.claude/clio/docs/plans/infra.md`'s version table rather than
   leaving the scaffold's caret range — `npm view react version` confirmed `19.3.0` is actually
   published, not just planned.
 - `strict: true` added by hand: the current `create-vite` `react-ts` template does not set it, even
@@ -66,7 +66,7 @@ Scaffolded the React/Vite/TS SPA, added Vitest as its test runner, and wired sam
   down afterward with `docker compose down`.
 
 ## Related
-- `.claude/docs/tasks/infra/1789982688_backend-scaffold.md` — the `spring-boot-maven-plugin`
+- `.claude/clio/docs/tasks/infra/1789982688_backend-scaffold.md` — the `spring-boot-maven-plugin`
   `repackage` binding fix this build depends on (found while building this Dockerfile) lives there,
   since it's a `cafefin-api/pom.xml`/build concern, not frontend-specific.
 

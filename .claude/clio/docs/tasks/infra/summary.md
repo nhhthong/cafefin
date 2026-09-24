@@ -1,5 +1,5 @@
 # Infra
-Domain: infra · Plan: `.claude/docs/plans/infra.md` · Spec: `memory/infra.md`
+Domain: infra · Plan: `.claude/clio/docs/plans/infra.md` · Spec: `memory/infra.md`
 
 ## What this is
 Environment/scaffold work (Task 0 in the roadmap): toolchain, the Maven multi-module layout,

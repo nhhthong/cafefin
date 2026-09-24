@@ -9,8 +9,8 @@ EdDSA) over HS256 ... Define access-token TTL (short: 5-15 minutes) and clock-sk
 explicitly."* Four values needed pinning before task 1.1.5 (login) could issue a real token:
 signing algorithm, access-token TTL, clock-skew tolerance, and refresh-token TTL (the last one not
 even given a range — the roadmap states no number for it at all). All four were confirmed with the
-user directly (`.claude/docs/plans/auth.md` records the same summary; this ADR is the fuller
-reasoning) before `.claude/docs/plans/auth.md` was written.
+user directly (`.claude/clio/docs/plans/auth.md` records the same summary; this ADR is the fuller
+reasoning) before `.claude/clio/docs/plans/auth.md` was written.
 
 ## Decision
 - **Signing algorithm: RS256** (RSA + SHA-256), not EdDSA. Both are spec-allowed asymmetric

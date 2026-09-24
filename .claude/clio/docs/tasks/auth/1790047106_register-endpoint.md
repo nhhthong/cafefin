@@ -71,9 +71,9 @@ persists the user, returns `201` without leaking the hash; a duplicate email ret
 - 2026-09-22 — `mvn -pl cafefin-api test` (full suite): 5/5 passed, `BUILD SUCCESS`.
 
 ## Related
-- `.claude/docs/plans/auth.md` — full task list; RS256/access-TTL/refresh-TTL/clock-skew decisions
+- `.claude/clio/docs/plans/auth.md` — full task list; RS256/access-TTL/refresh-TTL/clock-skew decisions
   (confirmed with the user, not yet implemented — task 1.1.5) are recorded there, not here.
-- ADR: `.claude/docs/decisions/1790047329_uuid-primary-keys.md` — the UUID-vs-BIGSERIAL decision for
+- ADR: `.claude/clio/docs/decisions/1790047329_uuid-primary-keys.md` — the UUID-vs-BIGSERIAL decision for
   `users.id` (and, by convention, every future domain table).
 
 ## Follow-up

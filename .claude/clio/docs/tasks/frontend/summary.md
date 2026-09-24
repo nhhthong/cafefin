@@ -1,5 +1,5 @@
 # Frontend
-Domain: frontend · Plan: `.claude/docs/plans/infra.md` · Spec: `memory/infra.md`, `memory/frontend.md`
+Domain: frontend · Plan: `.claude/clio/docs/plans/infra.md` · Spec: `memory/infra.md`, `memory/frontend.md`
 
 ## What this is
 The React/Vite/TS SPA (`frontend/cafefin-web`) and how it gets built and served same-origin from

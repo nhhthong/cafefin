@@ -57,13 +57,13 @@ one replayed.
   after rotation → `401`.
 
 ## Related
-- `.claude/docs/tasks/auth/1790059253_login-and-jwt-filter.md` — `login()`'s original refresh-token
+- `.claude/clio/docs/tasks/auth/1790059253_login-and-jwt-filter.md` — `login()`'s original refresh-token
   issuance this rotation flow extends; shares `AuthService`, `RefreshToken`, `RefreshTokenRepository`.
-- ADR: `.claude/docs/decisions/1790059362_jwt-signing-and-token-lifetimes.md` — 7-day refresh-token
+- ADR: `.claude/clio/docs/decisions/1790059362_jwt-signing-and-token-lifetimes.md` — 7-day refresh-token
   TTL this task enforces on `expires_at`.
 
 ## Follow-up
-- `.claude/docs/plans/auth.md` 1.8.4.1/1.8.4.2 (rate limiting on `/login` and `/register`) remain
+- `.claude/clio/docs/plans/auth.md` 1.8.4.1/1.8.4.2 (rate limiting on `/login` and `/register`) remain
   the only open rows.
 - `resources/docs/` has no flow guide for `/refresh` yet (`LOGIN.md` covers only `/login`) — worth
   adding via `/update-docs` before this is considered publicly documented.

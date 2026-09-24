@@ -1,25 +1,5 @@
 # Domain Context
 
-## Dev Environment
-
-Ubuntu 26.04, x86_64. Stack landmines (Boot 4.x module splits, Jackson 3.x, Testcontainers 2.x,
-Postgres grants, RFC 9457 switches) live in `.claude/rules/java-stack.md` — auto-loaded when you
-touch a `.java`/`pom.xml`/`.yml`/`.sql` file. Read it before debugging a "boots clean, does
-nothing" problem.
-
-- Maven at `~/tools/apache-maven-3.9.16` (apt only ships 3.9.12), on `PATH` via `~/.bashrc` —
-  export manually if a fresh shell hasn't sourced it (`mvn: command not found`).
-- `java -version` working does not prove a JDK is installed — check `which javac`. A JRE-only box
-  fails `mvn compile` with the misleading `release version 25 not supported`.
-- Secrets: `.env` at repo root (gitignored, no template ever committed — don't recreate one without
-  asking) holds `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD`, `MIGRATION_DB_PASSWORD`,
-  `RUNTIME_DB_PASSWORD`. Permission settings block all `.env*` paths, so pass values inline.
-- `docker compose up -d postgres`. The dual `migration`/`runtime` DB users are seeded by
-  `db/init/01-users.sh`, only on first volume creation.
-- Run the API: export `RUNTIME_DB_PASSWORD` and `MIGRATION_DB_PASSWORD`, then `mvn -pl cafefin-api
-  org.springframework.boot:spring-boot-maven-plugin:4.1.1:run` — the short `spring-boot:run` prefix
-  isn't registered. DB creds come from env only, never hard-coded.
-
 ## Core Entities
 
 - `Account` (`id userId currency accountType[USER/SYSTEM]`) — **no `balance` column**.

@@ -24,9 +24,9 @@ moment someone clones the repo fresh or browses it on GitHub. Treat it the way y
 scratch notes: useful while you're the one writing the doc, never something the *finished* doc
 depends on.
 
-Concretely: never write a path like `.claude/docs/plans/auth.md` or `.claude/docs/tasks/auth/...`
+Concretely: never write a path like `.claude/clio/docs/plans/auth.md` or `.claude/clio/docs/tasks/auth/...`
 into `resources/docs/*.md`, `TUTORIAL.md`, or `README.md`, not even as a "see also". If a fact only
-exists in a `.claude/docs/tasks/` note right now, restate it — in the flow doc's own prose, or
+exists in a `.claude/clio/docs/tasks/` note right now, restate it — in the flow doc's own prose, or
 better, as a comment in the source file it explains — instead of pointing at it. A reader six
 months from now, or a contributor who never had `.claude/` at all, has to get the full picture from
 the public doc and the code alone.
@@ -47,7 +47,7 @@ yourself).
    (status code, header, body shape), a `curl`/MockMvc result already captured earlier in the
    conversation, or a task doc's `## Testing Done` entry. Use the real values those runs produced,
    never a paraphrase or a "Spring usually returns" reconstruction — this repo has already hit
-   enough Boot-4.x surprises (`.claude/CONTEXT.md`'s Landmine entries) that "usually" isn't
+   enough Boot-4.x surprises (`.claude/rules/java-stack.md`) that "usually" isn't
    reliable here. Nothing in this session actually exercised the behavior you're about to
    document → say so and run the narrowest real check that produces evidence (a test, or one
    `curl` against the stack if it's already up) rather than inventing a plausible-looking body.
