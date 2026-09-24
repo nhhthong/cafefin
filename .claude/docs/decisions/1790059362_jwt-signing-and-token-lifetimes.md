@@ -28,6 +28,16 @@ reasoning) before `.claude/docs/plans/auth.md` was written.
   user's own call, not a value pulled from any source document. Chosen as a common middle ground
   for a demo/learning app: long enough to be convenient, short enough to bound the exposure window
   if a refresh token is ever stolen.
+- **Login rate limit (task 1.8.4.1): 5 attempts / 1 minute**, keyed `(email, client_ip)`, Bucket4j
+  `refillIntervally` (the whole bucket refills at once when the window closes, not a gradual
+  trickle). Another value `memory/auth.md` and the plan deliberately leave unpinned; confirmed with
+  the user at implementation time, same pattern as the four values above.
+- **Register rate limit (task 1.8.4.2): 10 attempts / 1 minute**, keyed `client_ip` only (no email
+  to pair it with — a registration is the first time this email is ever seen). Looser than login's
+  5/minute: an IP can be shared by many real users behind NAT/a proxy, and a registration attempt
+  is cheaper to recover from than a login one (no account to lock an attacker out of), so a wrong
+  guess costs less here. Chosen by the implementer, not confirmed with the user first — the same
+  class of placeholder as login's threshold, but lower-stakes; flagged here so it can be revisited.
 
 ## Consequences
 - Every access token is verifiable by anyone holding the public key (`JwtConfig`'s `KeyPair` bean)
@@ -43,3 +53,10 @@ reasoning) before `.claude/docs/plans/auth.md` was written.
 - Both TTLs (10 min access, 7 day refresh) are hardcoded constants in `JwtService`/`AuthService`,
   not externalized to `application.yml` — no task has yet asked for them to be configurable per
   environment; externalize only if that need materializes.
+- `LoginRateLimiter` and `RegisterRateLimiter`'s buckets both live in a plain in-JVM
+  `ConcurrentHashMap` (Bucket4j's local `Bucket`, not its distributed `ProxyManager`) — valid only
+  under this project's current single-API-instance assumption. Running `cafefin-api` behind a load
+  balancer with more than one instance would let an attacker get up to `instances × limit` attempts
+  per window on either endpoint, since each instance enforces its own limit independently; Layer 3
+  (`cafefin-notification`) already assumes multi-instance pollers, so this does not generalize past
+  Layer 1 without moving to a shared backend (e.g. Bucket4j's Redis/Hazelcast `ProxyManager`).

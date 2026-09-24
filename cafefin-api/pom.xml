@@ -99,6 +99,17 @@
       <scope>runtime</scope>
     </dependency>
 
+    <!-- Bucket4j: in-memory token-bucket rate limiting for the login/register
+         endpoints (task 1.8.4, memory/auth.md). jdk17-core variant — this
+         project targets Java 25, well past its floor. In-memory only means
+         each bucket lives in this JVM's heap; valid under the project's
+         current single-API-instance assumption (see LoginRateLimiter). -->
+    <dependency>
+      <groupId>com.bucket4j</groupId>
+      <artifactId>bucket4j_jdk17-core</artifactId>
+      <version>8.20.0</version>
+    </dependency>
+
     <!-- Flyway: runs the versioned SQL files under
          src/main/resources/db/migration on every app startup, tracking
          which ones already ran in the flyway_schema_history table. This is
