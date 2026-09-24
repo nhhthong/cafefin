@@ -37,11 +37,15 @@ reliability`). No default package, no global `model/`. JPA entities never cross 
 - **Minimal scope.** Every changed line traces to the request. Match the surrounding style. Delete
   only what your own change orphaned; mention other dead code. A simpler approach exists → say so
   first.
+- **Simplicity first.** Minimum code that solves the request — no speculative features, no
+  abstraction for single-use code, no unrequested configurability, no error handling for impossible
+  states. 200 lines that could be 50 → rewrite.
 - **Name the success criterion before starting** — "tests for invalid inputs pass", "a test
   reproduces the bug, then passes". Nothing ran → say so.
 - IMPORTANT: **This overrides the generic "no comments unless asked" default** — CafeFin is a
-  learning project (Java + fintech), so code needs to teach, not just run. Comment every non-trivial
-  file, class and method: what it is for, and why a line does what it does when that isn't obvious
+  learning project (Java + fintech), so code needs to teach, not just run. Applies only to code
+  implemented in the current session — never retro-comment untouched files. Comment every
+  non-trivial file, class and method you write: what it is for, and why a line does what it does when that isn't obvious
   (a locking choice, a sign-convention detail, an idempotency step, a security constraint). One or
   two lines of plain English, not paragraphs. Skip only genuinely self-explanatory lines.
 - Never log or render raw KYC identity documents, AML detection signals, HMAC secrets, or webhook
