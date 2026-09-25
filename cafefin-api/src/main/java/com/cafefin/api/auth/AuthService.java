@@ -14,6 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -99,7 +100,17 @@ public class AuthService {
    * of it after it was rotated away — so every token in that family gets revoked, not just the one
    * that was replayed. An unknown or expired token gets the same plain {@code 401}; there's no
    * family to distrust when the token was never valid to begin with.
+   *
+   * <p>{@code @Transactional}: revoking the old token and issuing the new pair are two separate
+   * writes — without a shared transaction, a failure between them (e.g. {@code jwtService} throws)
+   * would leave the old token revoked with no replacement ever issued, locking the user out
+   * (found and fixed under task 1.8.3.3.1, see {@code RefreshTransactionTest}).
+   * {@code noRollbackFor}: every 401 in this method is thrown as a {@link ResponseStatusException}
+   * (itself an unchecked exception) — Spring's default rollback-on-any-RuntimeException would
+   * otherwise undo {@link #revokeFamily}'s writes the instant the breach-detection branch throws,
+   * silently erasing the exact side effect that branch exists to guarantee.
    */
+  @Transactional(noRollbackFor = ResponseStatusException.class)
   public TokenPairResponse refresh(RefreshRequest request) {
     RefreshToken stored =
         refreshTokenRepository

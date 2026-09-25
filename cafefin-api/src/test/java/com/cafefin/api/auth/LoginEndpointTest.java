@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,7 +45,7 @@ class LoginEndpointTest {
   @Container
   @ServiceConnection
   static PostgreSQLContainer postgres =
-      new PostgreSQLContainer(DockerImageName.parse("postgres:17.11"));
+      new PostgreSQLContainer(DockerImageName.parse("postgres:17.11")).withReuse(true);
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
@@ -87,7 +88,15 @@ class LoginEndpointTest {
     assertThat(claims.getExpiration().toInstant())
         .isCloseTo(Instant.now().plus(Duration.ofMinutes(10)), within(Duration.ofSeconds(5)));
 
-    List<RefreshToken> stored = refreshTokenRepository.findAll();
+    // Scoped to this user's own id (from the access token's own sub claim),
+    // not a table-wide findAll(): the Postgres container is reused across
+    // separate test runs (testcontainers.reuse.enable=true), so other runs'
+    // rows are still in the table when this one starts.
+    UUID userId = UUID.fromString(claims.getSubject());
+    List<RefreshToken> stored =
+        refreshTokenRepository.findAll().stream()
+            .filter(rt -> rt.getUserId().equals(userId))
+            .toList();
     assertThat(stored).hasSize(1);
     String expectedHash =
         HexFormat.of()
@@ -156,5 +165,15 @@ class LoginEndpointTest {
     // just a field-by-field one) is the strongest version of this check —
     // an attacker diffing the two raw responses sees zero difference.
     assertThat(unknownEmailBody).isEqualTo(wrongPasswordBody);
+  }
+
+  @Test
+  void loginWithBlankCredentialsReturns400() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new LoginRequest("", ""))))
+        .andExpect(status().isBadRequest());
   }
 }

@@ -73,6 +73,16 @@ missing` since the BOM only manages the new names. Package moved too: import
 `org.testcontainers.postgresql.PostgreSQLContainer`, and the class is no longer generic
 (`PostgreSQLContainer`, not `PostgreSQLContainer<?>`).
 
+## Testcontainers reuse is on for this machine
+
+`~/.testcontainers.properties` has `testcontainers.reuse.enable=true`, and every `PostgreSQLContainer`
+field in `cafefin-api`'s tests calls `.withReuse(true)` — each separate `mvn -Dtest=X` invocation is
+its own JVM, so without reuse every one of those pays a fresh container boot. A machine (or CI runner)
+without that properties file silently falls back to one-container-per-run — slower, not wrong.
+Consequence: the container's data outlives any single test run, so a new `@Testcontainers` test must
+scope its assertions to the rows it created itself (e.g. filter by the id it just made), never assert
+a table's total row count — a global `findAll()`/`count()` check will see other runs' leftover rows.
+
 ## Executable jar needs an explicit repackage binding
 
 Without `spring-boot-starter-parent` as parent (this repo's root `pom.xml` is the parent),

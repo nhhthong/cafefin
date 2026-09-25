@@ -18,15 +18,15 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Task 1.1.3.1 (harden 1.1.1-1.1.3): security-level. Spring Data JPA parameterizes every query
- * behind {@link UserRepository}, so a SQL-syntax password can never reach raw SQL; this proves it
- * rather than assuming it. The second case proves a conflict response carries only the RFC 9457
- * shape (CLAUDE.md: never render internals in an error body).
+ * Task 1.8.3.3.1 (harden 1.8.3.1-1.8.3.3): security-level. A garbage {@code refreshToken} must
+ * fail the same way an unknown one does (401, not a 500) — the hash lookup itself never throws on
+ * an arbitrary string. A failed refresh's body carries only the RFC 9457 shape (CLAUDE.md), same
+ * principle {@link RegisterSecurityTest}/{@link LoginSecurityTest} prove for their own endpoints.
  */
 @Testcontainers
 @SpringBootTest
 @AutoConfigureMockMvc
-class RegisterSecurityTest {
+class RefreshSecurityTest {
 
   @Container
   @ServiceConnection
@@ -35,43 +35,28 @@ class RegisterSecurityTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
-  @Autowired private UserRepository userRepository;
 
   @Test
-  void sqlInjectionInPasswordDoesNotExecute() throws Exception {
-    String injectionAttempt = "'; DROP TABLE users; --";
-    RegisterRequest request = new RegisterRequest("injection@example.com", injectionAttempt);
-
+  void garbageRefreshTokenDoesNotCauseError() throws Exception {
     mockMvc
         .perform(
-            post("/api/v1/auth/register")
+            post("/api/v1/auth/refresh")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated());
-
-    // The users table surviving this call, plus the row actually being
-    // there, is the proof: a successful injection would have dropped the
-    // table before this read could run.
-    assertThat(userRepository.findByEmail("injection@example.com")).isPresent();
+                .content(
+                    objectMapper.writeValueAsString(new RefreshRequest("not-a-real-token-at-all"))))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test
-  void conflictResponseLeaksNoInternalDetails() throws Exception {
-    RegisterRequest request = new RegisterRequest("leak-check@example.com", "some-password");
-    mockMvc
-        .perform(
-            post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated());
-
+  void refreshFailureResponseLeaksNoInternalDetails() throws Exception {
     String body =
         mockMvc
             .perform(
-                post("/api/v1/auth/register")
+                post("/api/v1/auth/refresh")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isConflict())
+                    .content(
+                        objectMapper.writeValueAsString(new RefreshRequest("unknown-token-2"))))
+            .andExpect(status().isUnauthorized())
             .andReturn()
             .getResponse()
             .getContentAsString();
@@ -80,6 +65,6 @@ class RegisterSecurityTest {
         .doesNotContain("stacktrace")
         .doesNotContain("sql")
         .doesNotContain("hibernate")
-        .doesNotContain("password");
+        .doesNotContain("hash");
   }
 }

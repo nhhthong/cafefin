@@ -42,7 +42,7 @@ class RefreshEndpointTest {
   @Container
   @ServiceConnection
   static PostgreSQLContainer postgres =
-      new PostgreSQLContainer(DockerImageName.parse("postgres:17.11"));
+      new PostgreSQLContainer(DockerImageName.parse("postgres:17.11")).withReuse(true);
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
@@ -184,6 +184,16 @@ class RefreshEndpointTest {
                 .content(
                     objectMapper.writeValueAsString(new RefreshRequest(secondRawRefreshToken))))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void refreshWithBlankTokenReturns400() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new RefreshRequest(""))))
+        .andExpect(status().isBadRequest());
   }
 
   private RefreshToken onlyRowFor(String rawToken) {

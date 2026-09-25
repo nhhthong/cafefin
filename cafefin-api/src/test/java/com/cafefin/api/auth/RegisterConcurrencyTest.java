@@ -36,7 +36,7 @@ class RegisterConcurrencyTest {
   @Container
   @ServiceConnection
   static PostgreSQLContainer postgres =
-      new PostgreSQLContainer(DockerImageName.parse("postgres:17.11"));
+      new PostgreSQLContainer(DockerImageName.parse("postgres:17.11")).withReuse(true);
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
