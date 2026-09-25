@@ -82,4 +82,28 @@ class RegisterEndpointTest {
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isConflict());
   }
+
+  @Test
+  void registerWithInvalidEmailFormatReturns400() throws Exception {
+    RegisterRequest request = new RegisterRequest("not-an-email", "some-password");
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void registerWithBlankPasswordReturns400() throws Exception {
+    RegisterRequest request = new RegisterRequest("blank-password@example.com", "");
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isBadRequest());
+  }
 }

@@ -1,5 +1,6 @@
 # Plan — infra
 Spec: memory/infra.md · row 0 · Planned: 2026-09-21 · Re-planned: —
+Mutation: none (ADR 1790800000_no-mutation-testing.md)
 
 Repo is empty (Case B). Stack itself is fixed by the spec (Java/Spring Boot/Maven backend,
 React/Vite frontend, PostgreSQL) — nothing to choose there. Exact current versions researched via

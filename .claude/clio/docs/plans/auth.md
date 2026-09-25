@@ -39,3 +39,40 @@ Bucket4j is in-memory — valid only under this project's single-API-instance as
 already assumes multi-instance pollers, so this does **not** generalize past Layer 1). Document
 that limitation in the same ADR as the JWT/TTL decisions when 1.8.4.1 is implemented, per the
 roadmap's explicit call-out.
+
+## Re-planned 2026-09-25
+
+Every row above predates the `Levels` column (`clio-test.sh coverage` returns `no cases` for all
+of them) — none is a spec-delta or a revert, so each becomes one Harden sub-task per task doc it
+came from, not per row. `debt.jsonl` has one open item for this area,
+`refresh-endpoint-no-flow-doc` (docs-only, `blocked_by: null`) — not a spec/test gap, no task
+carries it; still owed via `/update-docs`.
+
+| # | Task | req | Levels | Needs | Touches | Done |
+|---|------|-----|--------|-------|---------|------|
+| 1.1.3.1 | Harden register doc (1.1.1–1.1.3, was: Testcontainers integration tests in `1790047106_register-endpoint.md`): unit, integration, api, security, concurrency | 1.1 | unit, integration, api, security, concurrency | 1.1.1, 1.1.2, 1.1.3 | `cafefin-api/src/main/java/com/cafefin/api/auth/AuthController.java`, `AuthService.java`, `UserRepository.java` | [ ] |
+| 1.1.10.1 | Harden login+JWT-filter doc (1.1.4–1.1.10, was: integration + filter-level `MockMvc` tests in `1790059253_login-and-jwt-filter.md`): critical, unit, integration, api, security | 1.1 | critical · unit, integration, api, security | 1.1.4, 1.1.5, 1.1.6, 1.1.7, 1.1.8, 1.1.9, 1.1.10 | `cafefin-api/src/main/java/com/cafefin/api/auth/AuthController.java`, `AuthService.java`, `JwtService.java`, `JwtAuthenticationFilter.java`, `SecurityConfig.java` | [ ] |
+| 1.8.3.3.1 | Harden refresh-rotation doc (1.8.3.1–1.8.3.3, was: integration tests in `1790095000_refresh-token-rotation.md`): critical, unit, integration, api, security, concurrency | 1.8.3 | critical · unit, integration, api, security, concurrency | 1.8.3.1, 1.8.3.2, 1.8.3.3 | `cafefin-api/src/main/java/com/cafefin/api/auth/AuthController.java`, `AuthService.java`, `RefreshToken.java`, `RefreshTokenRepository.java` | [ ] |
+| 1.8.4.1.1 | Harden login rate-limit doc (was: integration test in `1790224927_login-rate-limit.md`): unit, api, security, concurrency | 1.8.4 | unit, api, security, concurrency | 1.8.4.1 | `cafefin-api/src/main/java/com/cafefin/api/auth/LoginRateLimiter.java` | [ ] |
+| 1.8.4.2.1 | Harden register rate-limit doc (was: integration test in `1790231037_register-rate-limit.md`): unit, api, security, concurrency | 1.8.4 | unit, api, security, concurrency | 1.8.4.2 | `cafefin-api/src/main/java/com/cafefin/api/auth/RegisterRateLimiter.java` | [ ] |
+
+Not applicable:
+- 1.1.3.1 · contract — public API, no named consumer
+- 1.1.3.1 · idempotency — duplicate email already rejected via unique-constraint/409; spec states
+  no retry-safe-success requirement for register
+- 1.1.10.1 · contract — public API, no named consumer
+- 1.1.10.1 · e2e — login is not in `CONTEXT.md`'s key-flow list
+- 1.1.10.1 · idempotency — no dedupe requirement; each login independently issues its own tokens
+- 1.1.10.1 · concurrency — no shared mutable record two concurrent logins contest
+- 1.8.3.3.1 · contract — public API, no named consumer
+- 1.8.3.3.1 · idempotency — replay must be *rejected* as a breach, not treated as an idempotent
+  retry — this is exactly the `security.6` case, not an `idempotency` one
+- 1.8.4.1.1 · integration — Bucket4j is in-memory; no real store/queue/file to write through
+- 1.8.4.1.1 · contract — public API, no named consumer
+- 1.8.4.2.1 · integration — Bucket4j is in-memory; no real store/queue/file to write through
+- 1.8.4.2.1 · contract — public API, no named consumer
+
+1.8.3.3.1 cleared the "beyond critical" bar (persists, silent, hard to undo, hand-written
+comparison logic) but the user declined project-wide mutation testing — see
+`.claude/clio/docs/decisions/1790800000_no-mutation-testing.md` and `plans/infra.md`'s
+`Mutation: none` header. No `mutation` line, no re-ask.
