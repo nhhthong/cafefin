@@ -24,6 +24,7 @@ class UserRepositoryIntegrationTest {
 
   @Container
   @ServiceConnection
+  @SuppressWarnings("resource") // false-positive: chained .withReuse(true) confuses JDT's resource-leak check
   static PostgreSQLContainer postgres =
       new PostgreSQLContainer(DockerImageName.parse("postgres:17.11")).withReuse(true);
 
